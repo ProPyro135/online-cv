@@ -146,6 +146,9 @@ export default function App() {
   // The cursor build is the page's entrance: play it once fonts have laid out, unless the visitor asked for less motion.
   useEffect(() => {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    // The movie always starts at the top, not wherever the browser restored the scroll to.
+    history.scrollRestoration = 'manual';
+    scrollTo(0, 0);
     let cancelled = false;
     document.fonts.ready.then(() =>
       requestAnimationFrame(() => {
@@ -198,7 +201,7 @@ export default function App() {
                 aria-label={isBuilding ? 'Stop the build animation' : 'Replay the build animation'}
               >
                 {isBuilding ? <X className="h-3.5 w-3.5" /> : <MousePointer2 className="h-3.5 w-3.5" />}
-                {isBuilding ? 'Skip' : 'Replay build'}
+                {isBuilding ? 'Stop' : 'Replay build'}
               </button>
 
               <button

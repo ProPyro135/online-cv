@@ -1,35 +1,43 @@
-// "Watch it build": hides whatever is on screen, then a few labelled cursors
-// rebuild it — dragging out boxes (Figma-style) and typing text line by line —
-// by revealing the real elements with clip-path. Nothing is cloned or re-rendered.
+// "Watch it build", movie edition: hides the page, then a crew of labelled cursors rebuilds it
+// screen by screen — dragging out boxes (Figma-style) and typing text — while the page scrolls
+// itself down between screens. Real elements are revealed with clip-path; nothing is cloned.
+// Any wheel, touch, key or click (or the Stop button) ends it and hands the page back.
+
+import { CREW } from './crew';
 
 type Kind = 'box' | 'text';
 type Task = { el: HTMLElement | SVGSVGElement; kind: Kind; parent?: Task; taken: boolean; done: boolean };
 type Line = { left: number; right: number; top: number; bottom: number };
 
 const HIDE = 'data-sb-hide';
-const CREW: [string, string][] = [
-  ['React', '#61dafb'],
-  ['Angular', '#fb7185'],
-  ['AWS', '#f59e0b'],
-  ['Python', '#a78bfa'],
-  ['Ionic', '#34d399'],
-];
 
 const CSS = `
 [${HIDE}]{visibility:hidden!important;transition:none!important}
-.sb-layer{position:fixed;inset:0;z-index:45;transition:opacity .4s}
+.sb-running [data-reveal]{opacity:1!important;transform:none!important}
+.sb-layer{position:fixed;inset:0;z-index:45}
 .sb-cursor{position:fixed;left:0;top:0;pointer-events:none;will-change:transform;z-index:2}
-.sb-cursor svg{position:absolute;display:none;overflow:visible}
+.sb-cursor svg.sb-ptr{position:absolute;display:none;overflow:visible}
 .sb-cursor[data-mode=arrow] .sb-arrow,.sb-cursor[data-mode=cross] .sb-cross,.sb-cursor[data-mode=text] .sb-text{display:block}
 .sb-cross,.sb-text{left:-8px;top:-9px}
-.sb-name{position:absolute;left:14px;top:18px;padding:2px 7px;border-radius:6px;font-size:11px;font-weight:600;line-height:1.4;color:#0d0d0d;white-space:nowrap}
+.sb-name{position:absolute;left:14px;top:18px;display:flex;align-items:center;gap:5px;padding:3px 8px 3px 6px;border-radius:999px;font:600 11px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.sb-name svg{width:13px;height:13px;flex:none}
 .sb-sel{position:fixed;border:1px solid var(--c);background:color-mix(in srgb,var(--c) 7%,transparent);pointer-events:none;transition:opacity .25s}
 .sb-sel i{position:absolute;width:6px;height:6px;background:#0d0d0d;border:1px solid var(--c)}
 .sb-sel i:nth-child(1){left:-4px;top:-4px}.sb-sel i:nth-child(2){right:-4px;top:-4px}
 .sb-sel i:nth-child(3){left:-4px;bottom:-4px}.sb-sel i:nth-child(4){right:-4px;bottom:-4px}
-.sb-badge{position:absolute;top:100%;left:50%;transform:translate(-50%,7px);background:var(--c);color:#0d0d0d;font:600 10px/1 ui-monospace,monospace;padding:3px 5px;border-radius:4px;white-space:nowrap}
+.sb-badge{position:absolute;top:100%;left:50%;transform:translate(-50%,7px);background:var(--c);color:var(--t);font:600 10px/1 ui-monospace,monospace;padding:3px 5px;border-radius:4px;white-space:nowrap}
 .sb-caret{position:fixed;width:2px;background:var(--c);pointer-events:none}
-.sb-hint{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:6px 12px;border-radius:999px;background:rgba(13,13,13,.85);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);font-size:12px;white-space:nowrap;pointer-events:none}
+.sb-stop{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:8px 8px 8px 16px;border-radius:999px;background:rgba(22,22,23,.78);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border:1px solid rgba(255,255,255,.12);color:rgba(245,245,247,.75);font:13px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;white-space:nowrap;z-index:3}
+.sb-stop button{display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;background:#f5f5f7;color:#000;font-weight:600;cursor:pointer;transition:transform .12s}
+.sb-stop button:active{transform:scale(.97)}
+.sb-stop b{font-weight:600;color:#f5f5f7}
+.sb-meter{width:84px;height:4px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden}
+.sb-meter i,.sb-bar{display:block;height:100%;transform-origin:left;transform:scaleX(var(--p,0));background:linear-gradient(90deg,#61dafb,#ffd43b,#ff9900,#ff5c7a,#3b82f6,#3ecf8e)}
+.sb-pct{min-width:34px;text-align:right;font-variant-numeric:tabular-nums;color:#f5f5f7}
+.sb-bar{position:fixed;top:48px;left:0;width:100%;height:2px;box-shadow:0 0 14px 1px rgba(97,218,251,.55);overflow:hidden}
+.sb-bar::after{content:'';position:absolute;inset:0;width:30%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent);animation:sb-shine 1.4s linear infinite}
+@keyframes sb-shine{from{transform:translateX(-100%)}to{transform:translateX(400%)}}
+@media (max-width:640px){.sb-meter{display:none}}
 `;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -54,17 +62,18 @@ function isBox(cs: CSSStyleDeclaration) {
 
 const hasOwnText = (el: Element) => [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent!.trim());
 
-/** Every element on screen that paints something: boxes/media get dragged out, text gets typed. */
-function collect(root: Element): Task[] {
+/** Elements that paint something and intersect the viewport band [top, bottom). */
+function collect(root: Element, top: number, bottom: number, seen: WeakSet<Element>): Task[] {
   const tasks: Task[] = [];
   const byEl = new Map<Element, Task>();
   for (const el of root.querySelectorAll<HTMLElement | SVGElement>('*')) {
     if (el instanceof SVGElement && !(el instanceof SVGSVGElement)) continue;
-    if (el.closest('[data-swarm-skip]')) continue;
+    if (seen.has(el) || el.closest('[data-swarm-skip]')) continue;
     const r = el.getBoundingClientRect();
-    if (r.width < 2 || r.height < 2 || r.bottom <= 0 || r.top >= innerHeight || r.right <= 0 || r.left >= innerWidth) continue;
+    if (r.width < 2 || r.height < 2 || r.bottom <= top || r.top >= bottom || r.right <= 0 || r.left >= innerWidth) continue;
     if (r.width >= innerWidth * 0.98 && r.height >= innerHeight * 0.98) continue; // page-sized backgrounds stay
-    if ('checkVisibility' in el && !el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
+    // Not opacity: content further down is still mid-fade (scroll reveals) when it gets queued.
+    if ('checkVisibility' in el && !el.checkVisibility({ visibilityProperty: true })) continue;
     const cs = getComputedStyle(el);
     if (cs.filter.includes('blur')) continue; // decorative glows
     const media = el instanceof SVGSVGElement || el.tagName === 'IMG';
@@ -74,6 +83,7 @@ function collect(root: Element): Task[] {
     for (let p = el.parentElement; p && p !== root && !parent; p = p.parentElement) parent = byEl.get(p);
     const t: Task = { el: el as Task['el'], kind, parent, taken: false, done: false };
     byEl.set(el, t);
+    seen.add(el);
     tasks.push(t);
   }
   return tasks;
@@ -107,7 +117,14 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
     document.head.appendChild(style);
     injected = true;
   }
-  const tasks = collect(document.getElementById('root')!);
+  const root = document.getElementById('root')!;
+  const seen = new WeakSet<Element>();
+  const hidden = new Set<Task['el']>();
+  const hide = (ts: Task[]) => ts.forEach((t) => (t.el.setAttribute(HIDE, ''), hidden.add(t.el)));
+  // Everything from here to the bottom of the page: the denominator for the progress bar.
+  const total = Math.max(1, collect(root, 0, 1e7, new WeakSet()).length);
+  let built = 0;
+  let tasks = collect(root, 0, innerHeight, seen);
   if (!tasks.length) return;
 
   let alive = true;
@@ -126,63 +143,88 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
 
   const layer = document.createElement('div');
   layer.className = 'sb-layer';
-  layer.innerHTML = '<div class="sb-hint">Building the page · click or Esc to skip</div>';
+  layer.innerHTML =
+    '<div class="sb-bar"></div><div class="sb-stop" role="status"><span>Building <b>About</b></span><span class="sb-meter"><i></i></span><span class="sb-pct">0%</span><button type="button" aria-label="Stop the build animation"><svg width="9" height="9"><rect width="9" height="9" rx="1.5" fill="currentColor"/></svg>Stop</button></div>';
   document.body.appendChild(layer);
-  for (const t of tasks) t.el.setAttribute(HIDE, '');
+  hide(tasks);
 
-  // Scrolling would move things out from under the cursors; block it without hiding the scrollbar (no layout shift).
-  const block = (e: Event) => e.preventDefault();
-  const onKey = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') stop();
-    else if ([' ', 'PageUp', 'PageDown', 'Home', 'End', 'ArrowUp', 'ArrowDown'].includes(e.key)) e.preventDefault();
+  // Progress readout: the shown number eases toward the real one, like a loader catching up.
+  const label = layer.querySelector('.sb-stop b')!;
+  const pct = layer.querySelector('.sb-pct')!;
+  let shown = 0;
+  const meter = () => {
+    if (!alive) return;
+    shown += (built / total - shown) * 0.12;
+    layer.style.setProperty('--p', shown.toFixed(4));
+    pct.textContent = `${Math.round(shown * 100)}%`;
+    const mid = [...document.querySelectorAll('section[id]')].find((s) => {
+      const r = s.getBoundingClientRect();
+      return r.top <= innerHeight * 0.6 && r.bottom > innerHeight * 0.4;
+    });
+    if (mid) label.textContent = mid.id[0].toUpperCase() + mid.id.slice(1);
+    requestAnimationFrame(meter);
   };
-  addEventListener('wheel', block, { passive: false });
-  addEventListener('touchmove', block, { passive: false });
+  requestAnimationFrame(meter);
+
+  // The visitor takes over the moment they do anything.
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key !== 'Tab' && !e.metaKey && !e.ctrlKey && !e.altKey) stop();
+  };
+  const passive = { passive: true };
+  addEventListener('wheel', stop, passive);
+  addEventListener('touchstart', stop, passive);
   addEventListener('keydown', onKey);
-  layer.addEventListener('click', () => stop());
+  layer.addEventListener('pointerdown', stop);
 
   function stop() {
     if (!alive) return;
     alive = false;
     stopCurrent = null;
-    for (const t of tasks) {
-      t.el.removeAttribute(HIDE);
-      t.el.style.clipPath = '';
+    for (const el of hidden) {
+      el.removeAttribute(HIDE);
+      el.style.clipPath = '';
     }
-    removeEventListener('wheel', block);
-    removeEventListener('touchmove', block);
+    removeEventListener('wheel', stop);
+    removeEventListener('touchstart', stop);
     removeEventListener('keydown', onKey);
     layer.remove();
+    document.documentElement.classList.remove('sb-running');
     onRunningChange(false);
   }
   stopCurrent = stop;
   onRunningChange(true);
+  // The cursors are the reveal now; switch off the scroll fade-ins so they don't fight.
+  document.documentElement.classList.add('sb-running');
 
-  const cursors = CREW.slice(0, clamp(Math.ceil(tasks.length / 4), 1, CREW.length)).map(([name, color], i) => {
+  const crewSize = innerWidth < 640 ? 4 : 6;
+  // Time budget: each step costs ~0.6s at pace 1; speed everything up so the crew's share fits in ~18s.
+  const pace = Math.max(1, ((total / crewSize) * 0.6) / 18);
+  const dur = (ms: number) => ms / pace;
+  const cursors = CREW.slice(0, crewSize).map(([name, color, ink, logo], i) => {
     const el = document.createElement('div');
     el.className = 'sb-cursor';
     el.dataset.mode = 'arrow';
     el.innerHTML = `
-      <svg class="sb-arrow" width="16" height="20"><path d="M1 1v15l4.2-4 2.9 6.6 2.6-1.1-2.9-6.5H14z" fill="${color}" stroke="#0d0d0d" stroke-width="1.2" stroke-linejoin="round"/></svg>
-      <svg class="sb-cross" width="17" height="17"><path d="M8.5 0v17M0 8.5h17" stroke="#0d0d0d" stroke-width="3"/><path d="M8.5 0v17M0 8.5h17" stroke="${color}" stroke-width="1.2"/></svg>
-      <svg class="sb-text" width="17" height="19"><path d="M5.5 1h6M5.5 18h6M8.5 1v17" stroke="#0d0d0d" stroke-width="3"/><path d="M5.5 1h6M5.5 18h6M8.5 1v17" stroke="${color}" stroke-width="1.2"/></svg>
-      <span class="sb-name" style="background:${color}">${name}</span>`;
+      <svg class="sb-ptr sb-arrow" width="16" height="20"><path d="M1 1v15l4.2-4 2.9 6.6 2.6-1.1-2.9-6.5H14z" fill="${color}" stroke="#0d0d0d" stroke-width="1.2" stroke-linejoin="round"/></svg>
+      <svg class="sb-ptr sb-cross" width="17" height="17"><path d="M8.5 0v17M0 8.5h17" stroke="#0d0d0d" stroke-width="3"/><path d="M8.5 0v17M0 8.5h17" stroke="${color}" stroke-width="1.2"/></svg>
+      <svg class="sb-ptr sb-text" width="17" height="19"><path d="M5.5 1h6M5.5 18h6M8.5 1v17" stroke="#0d0d0d" stroke-width="3"/><path d="M5.5 1h6M5.5 18h6M8.5 1v17" stroke="${color}" stroke-width="1.2"/></svg>
+      <span class="sb-name" style="background:${color};color:${ink}"><svg viewBox="0 0 24 24"><path d="${logo}" fill="currentColor"/></svg>${name}</span>`;
     layer.appendChild(el);
     // Fly in from alternating screen edges.
-    const c = { el, color, x: i % 2 ? innerWidth + 40 : -40, y: innerHeight * (0.2 + 0.15 * i) };
+    const c = { el, color, ink, x: i % 2 ? innerWidth + 40 : -40, y: innerHeight * (0.15 + 0.12 * i) };
     const set = (x: number, y: number) => {
       c.x = x;
       c.y = y;
       el.style.transform = `translate(${x}px,${y}px)`;
     };
     set(c.x, c.y);
-    const moveTo = (x: number, y: number) => {
+    const moveTo = (x: number, y: number, ms?: number) => {
       const x0 = c.x, y0 = c.y;
       const dist = Math.hypot(x - x0, y - y0);
       // Slight arc: control point pushed sideways from the midpoint.
       const bend = (Math.random() - 0.5) * 0.4;
       const cx = (x0 + x) / 2 - (y - y0) * bend, cy = (y0 + y) / 2 + (x - x0) * bend;
-      return tween(clamp(250 + dist * 0.6, 250, 900), (k) => {
+      return tween(ms ?? dur(clamp(120 + dist * 0.3, 120, 320)), (k) => {
         const e = ease(k), u = 1 - e;
         set(u * u * x0 + 2 * u * e * cx + e * e * x, u * u * y0 + 2 * u * e * cy + e * e * y);
       });
@@ -190,23 +232,25 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
     return { ...c, set, moveTo, mode: (m: string) => (el.dataset.mode = m) };
   });
   type Cursor = (typeof cursors)[number];
+  const onScreenY = (y: number) => clamp(y, 56, innerHeight - 12);
 
   async function dragBox(c: Cursor, el: Task['el']) {
     const r = el.getBoundingClientRect();
-    await c.moveTo(r.left, r.top);
+    await c.moveTo(r.left, onScreenY(r.top));
     if (!alive) return;
     c.mode('cross');
     const sel = document.createElement('div');
     sel.className = 'sb-sel';
     sel.style.setProperty('--c', c.color);
+    sel.style.setProperty('--t', c.ink);
     sel.innerHTML = '<i></i><i></i><i></i><i></i><span class="sb-badge"></span>';
     layer.appendChild(sel);
     const badge = sel.querySelector('span')!;
     el.style.clipPath = 'inset(0 100% 100% 0)';
     el.removeAttribute(HIDE);
-    await tween(clamp(350 + Math.sqrt(r.width * r.height) * 1.2, 400, 1100), (k) => {
+    await tween(dur(clamp(220 + Math.sqrt(r.width * r.height) * 0.5, 250, 480)), (k) => {
       const e = ease(k), w = r.width * e, h = r.height * e;
-      c.set(r.left + w, r.top + h);
+      c.set(r.left + w, onScreenY(r.top + h));
       Object.assign(sel.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${w}px`, height: `${h}px` });
       badge.textContent = `${Math.round(w)} × ${Math.round(h)}`;
       el.style.clipPath = `inset(0 ${(1 - e) * 100}% ${(1 - e) * 100}% 0)`;
@@ -219,12 +263,15 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
   async function typeText(c: Cursor, el: Task['el']) {
     const er = el.getBoundingClientRect();
     const lines = lineRects(el);
-    // Section transforms (scale) mean viewport px != the element's own px.
+    // Ancestor transforms (scale) mean viewport px != the element's own px.
     const sx = el instanceof HTMLElement && el.offsetWidth ? er.width / el.offsetWidth : 1;
     const sy = el instanceof HTMLElement && el.offsetHeight ? er.height / el.offsetHeight : 1;
-    const charW = parseFloat(getComputedStyle(el).fontSize) * 0.5;
     if (!lines.length) return el.removeAttribute(HIDE);
-    await c.moveTo(lines[0].left, (lines[0].top + lines[0].bottom) / 2);
+    // One budget per element so a long paragraph types in about a second, not one char at a time.
+    const charW = parseFloat(getComputedStyle(el).fontSize) * 0.5;
+    const width = lines.reduce((s, l) => s + (l.right - l.left), 0);
+    const budget = dur(clamp((width / charW) * 7, 150, 520));
+    await c.moveTo(lines[0].left, onScreenY((lines[0].top + lines[0].bottom) / 2));
     if (!alive) return;
     c.mode('text');
     const caret = document.createElement('div');
@@ -235,12 +282,13 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
     el.removeAttribute(HIDE);
     for (const l of lines) {
       const yt = (l.top - er.top) / sy, yb = (l.bottom - er.top) / sy;
+      const my = onScreenY((l.top + l.bottom) / 2);
       Object.assign(caret.style, { top: `${l.top}px`, height: `${l.bottom - l.top}px` });
-      if (l !== lines[0]) await c.moveTo(l.left, (l.top + l.bottom) / 2);
-      await tween(clamp(((l.right - l.left) / charW) * 28, 120, 1600), (k) => {
+      if (l !== lines[0]) await c.moveTo(l.left, my, 40); // carriage return is quick
+      await tween(Math.max(30, (budget * (l.right - l.left)) / width), (k) => {
         const x = l.left + (l.right - l.left) * k;
         const lx = (x - er.left) / sx;
-        c.set(x, (l.top + l.bottom) / 2);
+        c.set(x, my);
         caret.style.left = `${x}px`;
         // Lines above are fully shown; the current line is shown up to the caret.
         el.style.clipPath = `polygon(0 0,100% 0,100% ${yt}px,${lx}px ${yt}px,${lx}px ${yb}px,0 ${yb}px)`;
@@ -250,33 +298,51 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
     caret.remove();
   }
 
-  const ready = (t: Task) => !t.taken && (!t.parent || t.parent.done);
-  async function work(c: Cursor) {
-    while (alive) {
-      const open = tasks.filter(ready).slice(0, 6);
-      if (!open.length) {
-        if (tasks.every((t) => t.taken)) return;
-        await sleep(60);
-        continue;
+  async function build(band: Task[]) {
+    const ready = (t: Task) => !t.taken && (!t.parent || t.parent.done);
+    const work = async (c: Cursor) => {
+      while (alive) {
+        const open = band.filter(ready).slice(0, 6);
+        if (!open.length) {
+          if (band.every((t) => t.taken)) return;
+          await sleep(50);
+          continue;
+        }
+        // Grab the nearest of the next few tasks so the crew spreads out naturally.
+        const dist = (t: Task) => {
+          const r = t.el.getBoundingClientRect();
+          return Math.hypot(r.left - c.x, r.top - c.y);
+        };
+        const t = open.reduce((a, b) => (dist(b) < dist(a) ? b : a));
+        t.taken = true;
+        await (t.kind === 'text' ? typeText(c, t.el) : dragBox(c, t.el));
+        t.done = true;
+        built++;
+        c.mode('arrow');
       }
-      // Grab the nearest of the next few tasks so the crew spreads out naturally.
-      const dist = (t: Task) => {
-        const r = t.el.getBoundingClientRect();
-        return Math.hypot(r.left - c.x, r.top - c.y);
-      };
-      const t = open.reduce((a, b) => (dist(b) < dist(a) ? b : a));
-      t.taken = true;
-      await (t.kind === 'text' ? typeText(c, t.el) : dragBox(c, t.el));
-      t.done = true;
-      c.mode('arrow');
-    }
+    };
+    await Promise.all(cursors.map(work));
   }
 
   (async () => {
-    await Promise.all(cursors.map(work));
+    while (alive) {
+      await build(tasks);
+      const max = document.documentElement.scrollHeight - innerHeight;
+      if (!alive || scrollY >= max - 2) break;
+      // Queue (and hide) what the next stretch of page will bring on screen, then glide down to it.
+      const step = Math.min(Math.round(innerHeight * 0.85), max - scrollY);
+      tasks = collect(root, innerHeight, innerHeight + step, seen);
+      hide(tasks);
+      const y0 = scrollY;
+      await sleep(60);
+      await tween(clamp(step * 0.9, 450, 800), (k) => scrollTo({ top: y0 + step * ease(k), behavior: 'instant' }));
+    }
     if (!alive) return;
+    built = total;
+    label.textContent = 'Done';
+    await sleep(500);
     // Everyone leaves the way they came, then the real page takes over.
-    layer.querySelector('.sb-hint')?.remove();
+    layer.querySelector('.sb-stop')?.remove();
     await Promise.all(cursors.map((c, i) => c.moveTo(i % 2 ? innerWidth + 60 : -60, c.y)));
     stop();
   })();
