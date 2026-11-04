@@ -3,7 +3,7 @@
 // itself down between screens. Real elements are revealed with clip-path; nothing is cloned.
 // Any wheel, touch, key or click (or the Stop button) ends it and hands the page back.
 
-import { CREW } from './crew';
+import { CREW, HELPERS, type Member } from './crew';
 
 type Kind = 'box' | 'text';
 type Task = { el: HTMLElement | SVGSVGElement; kind: Kind; parent?: Task; taken: boolean; done: boolean };
@@ -197,10 +197,8 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
   document.documentElement.classList.add('sb-running');
 
   const crewSize = innerWidth < 640 ? 4 : 6;
-  // Time budget: each step costs ~0.6s at pace 1; speed everything up so the crew's share fits in ~18s.
-  const pace = Math.max(1, ((total / crewSize) * 0.6) / 18);
-  const dur = (ms: number) => ms / pace;
-  const cursors = CREW.slice(0, crewSize).map(([name, color, ink, logo], i) => {
+  const makeCursor = (member: Member, x: number, y: number) => {
+    const [name, color, ink, logo] = member;
     const el = document.createElement('div');
     el.className = 'sb-cursor';
     el.dataset.mode = 'arrow';
@@ -210,27 +208,30 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
       <svg class="sb-ptr sb-text" width="17" height="19"><path d="M5.5 1h6M5.5 18h6M8.5 1v17" stroke="#0d0d0d" stroke-width="3"/><path d="M5.5 1h6M5.5 18h6M8.5 1v17" stroke="${color}" stroke-width="1.2"/></svg>
       <span class="sb-name" style="background:${color};color:${ink}"><svg viewBox="0 0 24 24"><path d="${logo}" fill="currentColor"/></svg>${name}</span>`;
     layer.appendChild(el);
-    // Fly in from alternating screen edges.
-    const c = { el, color, ink, x: i % 2 ? innerWidth + 40 : -40, y: innerHeight * (0.15 + 0.12 * i) };
+    const c = { el, color, ink, x, y };
     const set = (x: number, y: number) => {
       c.x = x;
       c.y = y;
       el.style.transform = `translate(${x}px,${y}px)`;
     };
-    set(c.x, c.y);
+    set(x, y);
     const moveTo = (x: number, y: number, ms?: number) => {
       const x0 = c.x, y0 = c.y;
       const dist = Math.hypot(x - x0, y - y0);
       // Slight arc: control point pushed sideways from the midpoint.
       const bend = (Math.random() - 0.5) * 0.4;
       const cx = (x0 + x) / 2 - (y - y0) * bend, cy = (y0 + y) / 2 + (x - x0) * bend;
-      return tween(ms ?? dur(clamp(120 + dist * 0.3, 120, 320)), (k) => {
+      return tween(ms ?? clamp(250 + dist * 0.6, 250, 900), (k) => {
         const e = ease(k), u = 1 - e;
         set(u * u * x0 + 2 * u * e * cx + e * e * x, u * u * y0 + 2 * u * e * cy + e * e * y);
       });
     };
-    return { ...c, set, moveTo, mode: (m: string) => (el.dataset.mode = m) };
-  });
+    return { ...c, member, set, moveTo, mode: (m: string) => (el.dataset.mode = m) };
+  };
+  // The main crew flies in from alternating screen edges.
+  const cursors = CREW.slice(0, crewSize).map((m, i) => makeCursor(m, i % 2 ? innerWidth + 40 : -40, innerHeight * (0.15 + 0.12 * i)));
+  // Helpers on the bench, called in for long paragraphs.
+  const bench = [...CREW.slice(crewSize), ...HELPERS];
   type Cursor = (typeof cursors)[number];
   const onScreenY = (y: number) => clamp(y, 56, innerHeight - 12);
 
@@ -248,7 +249,7 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
     const badge = sel.querySelector('span')!;
     el.style.clipPath = 'inset(0 100% 100% 0)';
     el.removeAttribute(HIDE);
-    await tween(dur(clamp(220 + Math.sqrt(r.width * r.height) * 0.5, 250, 480)), (k) => {
+    await tween(clamp(350 + Math.sqrt(r.width * r.height) * 1.2, 400, 1100), (k) => {
       const e = ease(k), w = r.width * e, h = r.height * e;
       c.set(r.left + w, onScreenY(r.top + h));
       Object.assign(sel.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${w}px`, height: `${h}px` });
@@ -260,6 +261,26 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
     setTimeout(() => sel.remove(), 250);
   }
 
+  /** Type one line at the original speed, reporting progress (0..1) as the caret moves. */
+  async function typeLine(c: Cursor, l: Line, charW: number, first: boolean, onProgress: (x: number) => void) {
+    const my = onScreenY((l.top + l.bottom) / 2);
+    await c.moveTo(l.left, my, first ? undefined : 120);
+    if (!alive) return;
+    c.mode('text');
+    const caret = document.createElement('div');
+    caret.className = 'sb-caret';
+    caret.style.setProperty('--c', c.color);
+    Object.assign(caret.style, { top: `${l.top}px`, height: `${l.bottom - l.top}px` });
+    layer.appendChild(caret);
+    await tween(clamp(((l.right - l.left) / charW) * 28, 120, 1600), (k) => {
+      const x = l.left + (l.right - l.left) * k;
+      c.set(x, my);
+      caret.style.left = `${x}px`;
+      onProgress(x);
+    });
+    caret.remove();
+  }
+
   async function typeText(c: Cursor, el: Task['el']) {
     const er = el.getBoundingClientRect();
     const lines = lineRects(el);
@@ -267,35 +288,63 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
     const sx = el instanceof HTMLElement && el.offsetWidth ? er.width / el.offsetWidth : 1;
     const sy = el instanceof HTMLElement && el.offsetHeight ? er.height / el.offsetHeight : 1;
     if (!lines.length) return el.removeAttribute(HIDE);
-    // One budget per element so a long paragraph types in about a second, not one char at a time.
     const charW = parseFloat(getComputedStyle(el).fontSize) * 0.5;
-    const width = lines.reduce((s, l) => s + (l.right - l.left), 0);
-    const budget = dur(clamp((width / charW) * 7, 150, 520));
-    await c.moveTo(lines[0].left, onScreenY((lines[0].top + lines[0].bottom) / 2));
-    if (!alive) return;
-    c.mode('text');
-    const caret = document.createElement('div');
-    caret.className = 'sb-caret';
-    caret.style.setProperty('--c', c.color);
-    layer.appendChild(caret);
-    el.style.clipPath = 'inset(0 100% 100% 0)';
-    el.removeAttribute(HIDE);
-    for (const l of lines) {
-      const yt = (l.top - er.top) / sy, yb = (l.bottom - er.top) / sy;
-      const my = onScreenY((l.top + l.bottom) / 2);
-      Object.assign(caret.style, { top: `${l.top}px`, height: `${l.bottom - l.top}px` });
-      if (l !== lines[0]) await c.moveTo(l.left, my, 40); // carriage return is quick
-      await tween(Math.max(30, (budget * (l.right - l.left)) / width), (k) => {
-        const x = l.left + (l.right - l.left) * k;
-        const lx = (x - er.left) / sx;
-        c.set(x, my);
-        caret.style.left = `${x}px`;
-        // Lines above are fully shown; the current line is shown up to the caret.
-        el.style.clipPath = `polygon(0 0,100% 0,100% ${yt}px,${lx}px ${yt}px,${lx}px ${yb}px,0 ${yb}px)`;
-      });
+    const ownW = er.width / sx;
+
+    // Long paragraph: split the lines into chunks and call in helpers so several carets type at once.
+    const helpersWanted = Math.min(4, lines.length - 1); // one extra caret per extra line, up to 4
+    const crew: Cursor[] = [c];
+    for (let i = 0; i < helpersWanted && bench.length; i++) {
+      const l = lines[Math.round(((i + 1) * lines.length) / (helpersWanted + 1))];
+      const fromLeft = l.left < innerWidth / 2;
+      crew.push(makeCursor(bench.shift()!, fromLeft ? -40 : innerWidth + 40, onScreenY(l.top)));
     }
+    const per = Math.ceil(lines.length / crew.length);
+    const chunks = crew.map((_, i) => lines.slice(i * per, (i + 1) * per)).filter((ch) => ch.length);
+
+    // Reveal: one rectangle per line, each as wide as its caret has reached (a union of sub-paths).
+    const reached = lines.map(() => 0);
+    const paint = () => {
+      const d = lines
+        .map((l, i) => {
+          if (!reached[i]) return '';
+          const yt = (l.top - er.top) / sy, yb = (l.bottom - er.top) / sy;
+          const x = reached[i] >= Infinity ? ownW : (reached[i] - er.left) / sx;
+          return `M0 ${yt}H${x}V${yb}H0Z`;
+        })
+        .join('');
+      el.style.clipPath = d ? `path('${d}')` : 'inset(0 100% 100% 0)';
+    };
+    paint();
+    let shown = false;
+    await Promise.all(
+      chunks.map(async (chunk, ci) => {
+        const who = crew[ci];
+        for (const [j, l] of chunk.entries()) {
+          if (!alive) return;
+          const i = lines.indexOf(l);
+          await typeLine(who, l, charW, j === 0, (x) => {
+            if (!shown) {
+              el.removeAttribute(HIDE);
+              shown = true;
+            }
+            reached[i] = x;
+            paint();
+          });
+          reached[i] = Infinity;
+          paint();
+        }
+        // Helpers head back to the nearest edge and leave.
+        if (who !== c) {
+          who.mode('arrow');
+          await who.moveTo(who.x < innerWidth / 2 ? -60 : innerWidth + 60, who.y);
+          who.el.remove();
+          bench.push(who.member);
+        }
+      }),
+    );
+    el.removeAttribute(HIDE);
     el.style.clipPath = '';
-    caret.remove();
   }
 
   async function build(band: Task[]) {
@@ -330,12 +379,12 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
       const max = document.documentElement.scrollHeight - innerHeight;
       if (!alive || scrollY >= max - 2) break;
       // Queue (and hide) what the next stretch of page will bring on screen, then glide down to it.
-      const step = Math.min(Math.round(innerHeight * 0.85), max - scrollY);
+      const step = Math.min(Math.round(innerHeight * 0.72), max - scrollY);
       tasks = collect(root, innerHeight, innerHeight + step, seen);
       hide(tasks);
       const y0 = scrollY;
-      await sleep(60);
-      await tween(clamp(step * 0.9, 450, 800), (k) => scrollTo({ top: y0 + step * ease(k), behavior: 'instant' }));
+      await sleep(150);
+      await tween(clamp(step * 1.3, 500, 1000), (k) => scrollTo({ top: y0 + step * ease(k), behavior: 'instant' }));
     }
     if (!alive) return;
     built = total;
