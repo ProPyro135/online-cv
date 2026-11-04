@@ -5,6 +5,7 @@ import Backdrop from './components/Backdrop';
 import ProfilePhoto from './components/ProfilePhoto';
 import Reveal from './components/Reveal';
 import SkillsSection from './components/SkillsSection';
+import TechChips from './components/TechChips';
 import { toggleSwarmBuild } from './swarmBuild';
 import devmatchTeam from '../imports/devmatch-team.jpg';
 import devmatchStage from '../imports/devmatch-stage.jpg';
@@ -46,65 +47,45 @@ const projects = [
   {
     title: 'Ivision Chatbot',
     accent: '#30d158',
-    subtitle: 'WhatsApp chatbot platform for businesses',
+    subtitle: 'WhatsApp chatbot that answers from each business’s own catalogue and prices.',
     date: '2026 – Present',
-    tech: ['TypeScript', 'Next.js', 'Fastify', 'PostgreSQL', 'Redis', 'Supabase', 'Docker', 'WhatsApp Business API'],
-    points: [
-      'Automated WhatsApp chatbot connected to each business’s product catalogue and price list',
-      'Multi-tenant architecture with PostgreSQL Row-Level Security (RLS) isolating each business’s data',
-      'Credential encryption (AES-256-GCM) and HMAC verification of incoming messages',
-    ],
+    tech: ['TypeScript', 'Next.js', 'Fastify', 'PostgreSQL', 'Redis', 'Supabase', 'Docker', 'WhatsApp'],
+    points: ['Multi-tenant, isolated with PostgreSQL row-level security', 'Encrypted credentials (AES-256-GCM), HMAC-verified messages'],
     repo: 'ProPyro135/Ivision-Chatbot',
   },
   {
     title: 'One Screener',
     accent: '#ffd60a',
-    subtitle: 'Web screener for stocks, forex & gold',
+    subtitle: 'Screens IDX stocks, forex and gold against your own criteria.',
     date: '2026 – Present',
     tech: ['Python', 'Streamlit'],
-    points: [
-      'Screens Indonesia Stock Exchange (IDX) stocks, forex and gold against user-defined criteria, replacing one-by-one manual checks',
-      'Manages historical market data with integrity checks and only displays metrics that have been measured',
-    ],
+    points: ['Historical market data with integrity checks'],
   },
   {
     title: 'Propertus',
     accent: '#2997ff',
-    subtitle: 'Cloud-based property management system',
+    subtitle: 'Property management platform with four role-based dashboards.',
     date: 'Oct 2025',
-    tech: ['React', 'TypeScript', 'ASP.NET Core 8', 'MySQL', 'AWS', 'Stripe', 'Vercel'],
-    points: [
-      'Four role-based dashboards covering assets, payments and maintenance',
-      'Stripe and Stripe Connect integration for rent payments and automatic fund distribution',
-      'JWT token authentication and two-factor verification (2FA/TOTP)',
-      'Deployed on AWS (EC2, RDS, Lambda, S3), including cloud storage and automatic thumbnail generation',
-    ],
+    tech: ['React', 'TypeScript', '.NET', 'MySQL', 'AWS', 'Stripe', 'Vercel'],
+    points: ['Stripe Connect rent payments and payouts', 'JWT + 2FA, deployed on AWS'],
     repo: 'sqd2/Property-Management-System-AWS',
   },
   {
-    title: 'Geofence Security Patrol Verification',
+    title: 'Geofence Patrol Verification',
     accent: '#ff9f0a',
-    subtitle: 'Final Year Project',
+    subtitle: 'Final Year Project: a GPS app that proves guards walked their route.',
     date: 'Jan 2026',
     tech: ['Ionic', 'Angular', 'Capacitor', 'Supabase'],
-    points: [
-      'GPS geofencing mobile app validating guards’ patrol routes and dwell time at each checkpoint',
-      'Hash-based verification to prevent tampering and keep patrol reports trustworthy',
-      'Offline-first architecture with automatic sync, real-time monitoring and report export',
-      'Managed with the RUP methodology and validated through User Acceptance Testing (UAT)',
-    ],
+    points: ['Hash-verified, tamper-proof patrol reports', 'Offline-first with live monitoring'],
     repo: 'ProPyro135/GSM',
   },
   {
     title: 'Orb',
     accent: '#bf5af2',
-    subtitle: '3D globe controlled by hand gestures',
+    subtitle: 'A 3D globe you steer with hand gestures.',
     date: '2026',
     tech: ['TypeScript', 'Three.js', 'MediaPipe', 'Vite'],
-    points: [
-      'Web app that controls a 3D globe in real time through camera-based hand tracking',
-      'Supports webcam, Ultraleap sensor and mouse, with automatic fallback when a device fails',
-    ],
+    points: ['Webcam, Ultraleap or mouse, with automatic fallback'],
     repo: 'ProPyro135/Ivision-3d-Hand-track',
   },
 ];
@@ -247,8 +228,7 @@ export default function App() {
                 </h1>
                 <p className="mt-6 text-[21px] leading-[1.38] tracking-[-0.01em] text-[var(--ink-2)]">
                   I build <span className="text-[var(--ink)]">offline-first mobile apps</span> and{' '}
-                  <span className="text-[var(--ink)]">full-stack platforms</span>, from plantation vehicle logging to GPS-verified security
-                  patrols. Interested in AWS cloud deployment and applied AI.
+                  <span className="text-[var(--ink)]">full-stack platforms</span>.
                 </p>
 
                 <div className="mt-9 flex flex-wrap items-center gap-3">
@@ -304,21 +284,19 @@ export default function App() {
             <Row when="Dec 2024 – May 2025" where="Internship">
               <h3 className="text-[21px] font-semibold leading-[1.3] tracking-[-0.015em]">Web Developer Intern</h3>
               <p className="mt-1 text-[17px] text-[var(--ink-2)]">PT Setrakarya Manunggal (Karyamas Plantation Group)</p>
-              <ul className="mt-5 space-y-3 text-[17px] leading-[1.47]">
-                <li>Developed a Trip Monitoring mobile app for logging vehicle crossings as the internship project.</li>
-                <li>Designed an offline-first architecture, from data entry to reporting, that keeps working without internet and syncs automatically.</li>
-                <li>Built the backend for master data management, tariff configuration and operational monitoring reports.</li>
+              <ul className="mt-5 list-disc space-y-1.5 pl-5 text-[17px] leading-[1.47] marker:text-[var(--ink-3)]">
+                <li>Trip Monitoring app for plantation vehicle logs</li>
+                <li>Works offline, syncs automatically</li>
+                <li>Backend for master data, tariffs and reports</li>
               </ul>
-              <p className="mt-5 text-[15px] text-[var(--ink-2)]">Angular · Ionic · SQLite · PHP · MySQL · REST API</p>
+              <TechChips className="mt-5" items={['Angular', 'Ionic', 'SQLite', 'PHP', 'MySQL', 'REST API']} />
             </Row>
 
             <h3 className="mb-2 mt-20 text-[28px] font-semibold tracking-[-0.02em]">Awards</h3>
             <Row when="Sep 2024" where="Kuala Lumpur">
               <h4 className="text-[21px] font-semibold leading-[1.3] tracking-[-0.015em]">1st Place, DEVMatch Hackathon</h4>
               <p className="mt-1 text-[17px] text-[var(--ink-2)]">MasChain Tourism Track</p>
-              <p className="mt-4 text-[17px] leading-[1.47]">
-                Built the interface for “DocTour”, a blockchain-based medical tourism app, and integrated it with the MasChain API.
-              </p>
+              <p className="mt-3 text-[17px] leading-[1.47]">Built the UI for DocTour, a blockchain medical tourism app.</p>
               {/* Proof: the winners' screen at the awards (opens full size) */}
               <div className="mt-6 grid grid-cols-2 gap-2 md:grid-cols-[1.78fr_1fr_1fr] md:gap-3">
                 {[
@@ -342,9 +320,7 @@ export default function App() {
             <Row when="Nov 2023" where="Kuala Lumpur">
               <h4 className="text-[21px] font-semibold leading-[1.3] tracking-[-0.015em]">2nd Place, APU Entrepreneurship</h4>
               <p className="mt-1 text-[17px] text-[var(--ink-2)]">Pitch Presenter & Concept Developer</p>
-              <p className="mt-4 text-[17px] leading-[1.47]">
-                Developed the concept for a gamified walking app that rewards distance travelled, and pitched its market potential to the judges.
-              </p>
+              <p className="mt-3 text-[17px] leading-[1.47]">Pitched a walking app that rewards distance travelled.</p>
             </Row>
           </section>
 
@@ -360,14 +336,17 @@ export default function App() {
                     {p.date}
                   </p>
                   <h3 className="relative mt-2 text-[28px] font-semibold leading-[1.14] tracking-[-0.02em]">{p.title}</h3>
-                  <p className="mt-1 text-[17px] text-[var(--ink-2)]">{p.subtitle}</p>
-                  <ul className={`mt-6 space-y-3 text-[17px] leading-[1.47] ${i === 0 ? 'md:columns-2 md:gap-10 md:space-y-0 [&>li]:md:mb-3' : ''}`}>
+                  <p className="mt-2 text-[17px] leading-[1.42] text-[var(--ink-2)]">{p.subtitle}</p>
+                  <ul className="mt-4 space-y-1.5 text-[15px] leading-[1.45]">
                     {p.points.map((pt) => (
-                      <li key={pt} className="break-inside-avoid">{pt}</li>
+                      <li key={pt} className="flex gap-2">
+                        <span aria-hidden className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--hue)]" />
+                        {pt}
+                      </li>
                     ))}
                   </ul>
-                  <div className="mt-auto pt-7">
-                    <p className="text-[15px] leading-[1.5] text-[var(--ink-2)]">{p.tech.join(' · ')}</p>
+                  <div className="mt-auto pt-6">
+                    <TechChips items={p.tech} />
                     {p.repo && (
                       <a href={`https://github.com/${p.repo}`} target="_blank" rel="noopener noreferrer" className={`${link} mt-3 text-[15px]`}>
                         <Github className="mr-1.5 h-4 w-4" />

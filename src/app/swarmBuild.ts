@@ -27,6 +27,7 @@ const CSS = `
 .sb-sel i:nth-child(3){left:-4px;bottom:-4px}.sb-sel i:nth-child(4){right:-4px;bottom:-4px}
 .sb-badge{position:absolute;top:100%;left:50%;transform:translate(-50%,7px);background:var(--c);color:var(--t);font:600 10px/1 ui-monospace,monospace;padding:3px 5px;border-radius:4px;white-space:nowrap}
 .sb-caret{position:fixed;width:2px;background:var(--c);pointer-events:none}
+.sb-cursor[data-parked] .sb-name{font-size:0;gap:0;padding:5px}
 .sb-stop{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:8px 8px 8px 16px;border-radius:999px;background:rgba(22,22,23,.78);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border:1px solid rgba(255,255,255,.12);color:rgba(245,245,247,.75);font:13px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;white-space:nowrap;z-index:3}
 .sb-stop button{display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;background:#f5f5f7;color:#000;font-weight:600;cursor:pointer;transition:transform .12s}
 .sb-stop button:active{transform:scale(.97)}
@@ -69,6 +70,9 @@ function collect(root: Element, top: number, bottom: number, seen: WeakSet<Eleme
   for (const el of root.querySelectorAll<HTMLElement | SVGElement>('*')) {
     if (el instanceof SVGElement && !(el instanceof SVGSVGElement)) continue;
     if (seen.has(el) || el.closest('[data-swarm-skip]')) continue;
+    // A [data-swarm-whole] group (a row of logo chips) is dragged out as one box; its insides aren't separate steps.
+    const whole = el.closest('[data-swarm-whole]');
+    if (whole && whole !== el) continue;
     const r = el.getBoundingClientRect();
     if (r.width < 2 || r.height < 2 || r.bottom <= top || r.top >= bottom || r.right <= 0 || r.left >= innerWidth) continue;
     if (r.width >= innerWidth * 0.98 && r.height >= innerHeight * 0.98) continue; // page-sized backgrounds stay
@@ -77,7 +81,7 @@ function collect(root: Element, top: number, bottom: number, seen: WeakSet<Eleme
     const cs = getComputedStyle(el);
     if (cs.filter.includes('blur')) continue; // decorative glows
     const media = el instanceof SVGSVGElement || el.tagName === 'IMG';
-    const kind: Kind | null = media || isBox(cs) ? 'box' : hasOwnText(el) ? 'text' : null;
+    const kind: Kind | null = media || whole || isBox(cs) ? 'box' : hasOwnText(el) ? 'text' : null;
     if (!kind) continue;
     let parent: Task | undefined;
     for (let p = el.parentElement; p && p !== root && !parent; p = p.parentElement) parent = byEl.get(p);
@@ -104,6 +108,29 @@ function lineRects(el: Element): Line[] {
     }
   }
   return lines.sort((a, b) => a.top - b.top);
+}
+
+/**
+ * Where the movie should scroll to next: the next section start if one is coming up, otherwise the
+ * furthest block (row, tile, heading) that starts on the next screen, so it never stops mid-block.
+ */
+function nextStop(max: number) {
+  const nav = 64;
+  const lo = scrollY + innerHeight * 0.3, hi = scrollY + innerHeight * 0.92;
+  const tops = (sel: string) =>
+    [...document.querySelectorAll(sel)].map((el) => el.getBoundingClientRect().top + scrollY - nav).filter((y) => y > lo && y <= hi);
+  const sections = tops('section[id]');
+  const blocks = tops('[data-reveal]');
+  // A block taller than the screen: at least stop where a heading, paragraph, list item or photo begins.
+  const pieces = tops('main h2, main h3, main h4, main p, main li, main img, main [data-swarm-whole]');
+  const y = sections.length
+    ? Math.min(...sections)
+    : blocks.length
+      ? Math.max(...blocks)
+      : pieces.length
+        ? Math.max(...pieces)
+        : scrollY + innerHeight * 0.72;
+  return Math.min(Math.round(y), max);
 }
 
 let injected = false;
@@ -208,7 +235,7 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
       <svg class="sb-ptr sb-text" width="17" height="19"><path d="M5.5 1h6M5.5 18h6M8.5 1v17" stroke="#0d0d0d" stroke-width="3"/><path d="M5.5 1h6M5.5 18h6M8.5 1v17" stroke="${color}" stroke-width="1.2"/></svg>
       <span class="sb-name" style="background:${color};color:${ink}"><svg viewBox="0 0 24 24"><path d="${logo}" fill="currentColor"/></svg>${name}</span>`;
     layer.appendChild(el);
-    const c = { el, color, ink, x, y };
+    const c = { el, color, ink, x, y, member, orbit: '' as '' | 'arriving' | 'on', slot: 0 };
     const set = (x: number, y: number) => {
       c.x = x;
       c.y = y;
@@ -226,10 +253,56 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
         set(u * u * x0 + 2 * u * e * cx + e * e * x, u * u * y0 + 2 * u * e * cy + e * e * y);
       });
     };
-    return { ...c, member, set, moveTo, mode: (m: string) => (el.dataset.mode = m) };
+    // Same object, not a copy: x/y must stay live for nearest-task picks and orbit hand-offs.
+    return Object.assign(c, { set, moveTo, mode: (m: string) => (el.dataset.mode = m) });
   };
   // The main crew flies in from alternating screen edges.
   const cursors = CREW.slice(0, crewSize).map((m, i) => makeCursor(m, i % 2 ? innerWidth + 40 : -40, innerHeight * (0.15 + 0.12 * i)));
+  cursors.forEach((c, i) => (c.slot = i));
+
+  // Idle cursors circle an invisible point as logo "satellites" instead of loitering over the content.
+  // In the empty right margin beside the content column when there's room; otherwise the bottom-right corner.
+  const margin = (innerWidth - 1024) / 2;
+  const roomy = margin >= 96;
+  const R = roomy ? Math.min(64, (margin - 24) / 2) : innerWidth < 640 ? 40 : 56;
+  const hub = roomy
+    ? { x: innerWidth - margin / 2 - 14, y: innerHeight * 0.55 }
+    : { x: innerWidth - R - 20, y: innerHeight - R * 0.55 - 110 };
+  let theta = 0;
+  // Offset so the logo chip, not the arrow tip, rides the ring.
+  const orbitPos = (c: { slot: number }) => {
+    const a = theta + (c.slot * Math.PI * 2) / cursors.length;
+    return { x: hub.x + R * Math.cos(a) - 20, y: hub.y + R * 0.55 * Math.sin(a) - 26 };
+  };
+  let lastT = performance.now();
+  const spin = (now: number) => {
+    if (!alive) return;
+    theta += ((now - lastT) / 1000) * 0.8;
+    lastT = now;
+    for (const c of cursors) if (c.orbit === 'on') {
+      const p = orbitPos(c);
+      c.set(p.x, p.y);
+    }
+    requestAnimationFrame(spin);
+  };
+  requestAnimationFrame(spin);
+  const park = async (c: Cursor) => {
+    if (c.orbit) return;
+    c.orbit = 'arriving';
+    c.mode('arrow');
+    c.el.dataset.parked = '';
+    const x0 = c.x, y0 = c.y;
+    await tween(800, (k) => {
+      if (c.orbit !== 'arriving') return; // called away mid-flight
+      const e = ease(k), p = orbitPos(c);
+      c.set(x0 + (p.x - x0) * e, y0 + (p.y - y0) * e);
+    });
+    if (c.orbit === 'arriving') c.orbit = 'on';
+  };
+  const unpark = (c: Cursor) => {
+    c.orbit = '';
+    delete c.el.dataset.parked;
+  };
   // Helpers on the bench, called in for long paragraphs.
   const bench = [...CREW.slice(crewSize), ...HELPERS];
   type Cursor = (typeof cursors)[number];
@@ -350,10 +423,14 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
   async function build(band: Task[]) {
     const ready = (t: Task) => !t.taken && (!t.parent || t.parent.done);
     const work = async (c: Cursor) => {
+      let idleSince = 0;
       while (alive) {
         const open = band.filter(ready).slice(0, 6);
         if (!open.length) {
-          if (band.every((t) => t.taken)) return;
+          if (band.every((t) => t.taken)) return park(c);
+          // Waited a while? Drift into orbit; it gets called back the moment work frees up.
+          idleSince ||= performance.now();
+          if (performance.now() - idleSince > 500) park(c);
           await sleep(50);
           continue;
         }
@@ -364,6 +441,8 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
         };
         const t = open.reduce((a, b) => (dist(b) < dist(a) ? b : a));
         t.taken = true;
+        idleSince = 0;
+        unpark(c);
         await (t.kind === 'text' ? typeText(c, t.el) : dragBox(c, t.el));
         t.done = true;
         built++;
@@ -379,7 +458,7 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
       const max = document.documentElement.scrollHeight - innerHeight;
       if (!alive || scrollY >= max - 2) break;
       // Queue (and hide) what the next stretch of page will bring on screen, then glide down to it.
-      const step = Math.min(Math.round(innerHeight * 0.72), max - scrollY);
+      const step = Math.round(nextStop(max) - scrollY);
       tasks = collect(root, innerHeight, innerHeight + step, seen);
       hide(tasks);
       const y0 = scrollY;
@@ -391,6 +470,7 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
     label.textContent = 'Done';
     await sleep(500);
     // Everyone leaves the way they came, then the real page takes over.
+    cursors.forEach(unpark);
     layer.querySelector('.sb-stop')?.remove();
     await Promise.all(cursors.map((c, i) => c.moveTo(i % 2 ? innerWidth + 60 : -60, c.y)));
     stop();
