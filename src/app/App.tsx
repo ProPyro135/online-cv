@@ -6,6 +6,7 @@ import SkillsSection from './components/SkillsSection';
 import { toggleSwarmBuild } from './swarmBuild';
 import { useIsMobile } from './components/ui/use-mobile';
 import resumePdf from '../imports/Alfeus_Xiesi_Delroy_-_Resume.pdf';
+import resumePdfId from '../imports/Alfeus_Xiesi_Delroy_-_Resume_ID.pdf';
 
 function FullScreenSection({ children, id }: { children: React.ReactNode; id?: string }) {
   const ref = useRef(null);
@@ -427,6 +428,13 @@ export default function App() {
                       </motion.a>
                     ))}
                   </div>
+                  <a
+                    href={resumePdfId}
+                    download="Alfeus_Xiesi_Delroy_Resume_ID.pdf"
+                    className="self-start text-sm text-white/50 underline-offset-4 transition-colors hover:text-amber-500 hover:underline"
+                  >
+                    Resume also available in Bahasa Indonesia
+                  </a>
                 </motion.div>
               </motion.div>
 
@@ -839,6 +847,16 @@ export default function App() {
                       >
                         <FileDown className="h-4 w-4" />
                         Download Resume
+                      </motion.a>
+                      <motion.a
+                        href={resumePdfId}
+                        download="Alfeus_Xiesi_Delroy_Resume_ID.pdf"
+                        className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-5 py-3 text-sm text-white/80 transition-colors hover:border-amber-500/30 hover:text-amber-500"
+                        whileHover={{ scale: 1.04, y: -2 }}
+                        whileTap={{ scale: 0.97 }}
+                      >
+                        <FileDown className="h-4 w-4" />
+                        Resume (Bahasa Indonesia)
                       </motion.a>
                       <motion.a
                         href="mailto:dalfeusxiesi@gmail.com"
