@@ -33,7 +33,7 @@ export default function SkillsSection() {
 
       <Reveal className="mt-16 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-5">
         {spokenLanguages.map((l) => (
-          <div key={l.name} className="rounded-[22px] bg-[var(--tile)] p-6">
+          <div key={l.name} className="tile rounded-[22px] p-6">
             <p className="text-[21px] font-semibold tracking-[-0.015em]">{l.name}</p>
             <p className="mt-1 text-[15px] text-[var(--ink-2)]">{l.level}</p>
           </div>

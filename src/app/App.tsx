@@ -1,6 +1,7 @@
 import { Mail, Phone, Linkedin, Menu, X, MousePointer2, Github, ChevronRight } from 'lucide-react';
 import { MotionConfig } from 'motion/react';
 import { useState, useEffect } from 'react';
+import Backdrop from './components/Backdrop';
 import ProfilePhoto from './components/ProfilePhoto';
 import Reveal from './components/Reveal';
 import SkillsSection from './components/SkillsSection';
@@ -41,6 +42,7 @@ const navigation = [
 const projects = [
   {
     title: 'Ivision Chatbot',
+    accent: '#30d158',
     subtitle: 'WhatsApp chatbot platform for businesses',
     date: '2026 – Present',
     tech: ['TypeScript', 'Next.js', 'Fastify', 'PostgreSQL', 'Redis', 'Supabase', 'Docker', 'WhatsApp Business API'],
@@ -53,6 +55,7 @@ const projects = [
   },
   {
     title: 'One Screener',
+    accent: '#ffd60a',
     subtitle: 'Web screener for stocks, forex & gold',
     date: '2026 – Present',
     tech: ['Python', 'Streamlit'],
@@ -63,6 +66,7 @@ const projects = [
   },
   {
     title: 'Propertus',
+    accent: '#2997ff',
     subtitle: 'Cloud-based property management system',
     date: 'Oct 2025',
     tech: ['React', 'TypeScript', 'ASP.NET Core 8', 'MySQL', 'AWS', 'Stripe', 'Vercel'],
@@ -76,6 +80,7 @@ const projects = [
   },
   {
     title: 'Geofence Security Patrol Verification',
+    accent: '#ff9f0a',
     subtitle: 'Final Year Project',
     date: 'Jan 2026',
     tech: ['Ionic', 'Angular', 'Capacitor', 'Supabase'],
@@ -89,6 +94,7 @@ const projects = [
   },
   {
     title: 'Orb',
+    accent: '#bf5af2',
     subtitle: '3D globe controlled by hand gestures',
     date: '2026',
     tech: ['TypeScript', 'Three.js', 'MediaPipe', 'Vite'],
@@ -98,6 +104,13 @@ const projects = [
     ],
     repo: 'ProPyro135/Ivision-3d-Hand-track',
   },
+];
+
+const highlights = [
+  { value: '1st', label: 'DEVMatch Hackathon 2024' },
+  { value: '5', label: 'Projects built' },
+  { value: '3.03', label: 'CGPA, dual degree UK × MY' },
+  { value: '4', label: 'Spoken languages' },
 ];
 
 const contactLinks = [
@@ -152,6 +165,7 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <div className="min-h-screen bg-[var(--bg)] text-[var(--ink)]">
+        <Backdrop />
         {/* Translucent nav: content scrolls underneath it */}
         <nav data-swarm-skip className="glass fixed inset-x-0 top-0 z-50">
           <div className="mx-auto flex h-12 max-w-[1024px] items-center justify-between px-4 md:px-6">
@@ -216,7 +230,7 @@ export default function App() {
           )}
         </nav>
 
-        <main className="mx-auto max-w-[1024px] px-4 md:px-6">
+        <main className="relative mx-auto max-w-[1024px] px-4 md:px-6">
           {/* Hero — no entrance animation of its own: the cursor build is the entrance */}
           <section id="about" className="flex min-h-[100svh] flex-col justify-center pb-16 pt-24">
             <div className="flex flex-col-reverse gap-10 md:flex-row md:items-end md:justify-between">
@@ -250,6 +264,15 @@ export default function App() {
 
               <ProfilePhoto />
             </div>
+
+            <dl className="mt-16 grid grid-cols-2 gap-px overflow-hidden rounded-[22px] border border-[var(--line)] bg-[var(--line)] md:grid-cols-4">
+              {highlights.map((h) => (
+                <div key={h.label} className="bg-[rgba(10,10,11,0.82)] px-5 py-5 backdrop-blur-md md:px-6">
+                  <dd className="text-[28px] font-semibold leading-none tracking-[-0.025em] text-[var(--ink)]">{h.value}</dd>
+                  <dt className="mt-2 text-[15px] leading-[1.35] text-[var(--ink-2)]">{h.label}</dt>
+                </div>
+              ))}
+            </dl>
           </section>
 
           <section id="education" className="scroll-mt-12 py-24 md:py-32">
@@ -304,9 +327,14 @@ export default function App() {
             <SectionHead title="Projects." lede="Things I've built and shipped, from client platforms to experiments." />
             <div className="grid gap-4 md:grid-cols-2 md:gap-5">
               {projects.map((p, i) => (
-                <Reveal key={p.title} className={`flex flex-col rounded-[28px] bg-[var(--tile)] p-7 md:p-9 ${i === 0 ? 'md:col-span-2' : ''}`}>
-                  <p className="text-[15px] text-[var(--ink-2)]">{p.date}</p>
-                  <h3 className="mt-2 text-[28px] font-semibold leading-[1.14] tracking-[-0.02em]">{p.title}</h3>
+                <Reveal key={p.title} className={`h-full ${i === 0 ? 'md:col-span-2' : ''}`}>
+                <article className="tile relative flex h-full flex-col overflow-hidden rounded-[28px] p-7 md:p-9" style={{ '--hue': p.accent } as React.CSSProperties}>
+                  <div aria-hidden className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full bg-[var(--hue)] opacity-[0.16] blur-[70px]" />
+                  <p className="relative flex items-center gap-2 text-[15px] text-[var(--ink-2)]">
+                    <span className="h-2 w-2 rounded-full bg-[var(--hue)]" />
+                    {p.date}
+                  </p>
+                  <h3 className="relative mt-2 text-[28px] font-semibold leading-[1.14] tracking-[-0.02em]">{p.title}</h3>
                   <p className="mt-1 text-[17px] text-[var(--ink-2)]">{p.subtitle}</p>
                   <ul className={`mt-6 space-y-3 text-[17px] leading-[1.47] ${i === 0 ? 'md:columns-2 md:gap-10 md:space-y-0 [&>li]:md:mb-3' : ''}`}>
                     {p.points.map((pt) => (
@@ -322,6 +350,7 @@ export default function App() {
                       </a>
                     )}
                   </div>
+                </article>
                 </Reveal>
               ))}
             </div>
@@ -335,14 +364,14 @@ export default function App() {
             <SectionHead title="Let's talk." lede="Open to graduate and junior developer roles across frontend, backend, cloud and AI-powered systems." />
             <Reveal>
               <ResumeDownload lang={lang} onLang={setLang} />
-              <div className="mt-12 grid gap-px overflow-hidden rounded-[22px] bg-[var(--line)] md:grid-cols-3">
+              <div className="mt-12 grid gap-4 md:grid-cols-3">
                 {contactLinks.map((c) => (
                   <a
                     key={c.label}
                     href={c.href}
                     target={c.external ? '_blank' : undefined}
                     rel={c.external ? 'noopener noreferrer' : undefined}
-                    className="group bg-[var(--tile)] p-6 transition-colors hover:bg-[var(--tile-hover)]"
+                    className="tile press group rounded-[22px] p-6"
                   >
                     <c.icon className="h-5 w-5 text-[var(--ink-2)]" />
                     <p className="mt-4 text-[15px] text-[var(--ink-2)]">{c.label}</p>
@@ -354,7 +383,7 @@ export default function App() {
           </section>
         </main>
 
-        <footer className="mx-auto max-w-[1024px] border-t border-[var(--line)] px-4 py-8 text-[13px] text-[var(--ink-3)] md:px-6">
+        <footer className="relative mx-auto max-w-[1024px] border-t border-[var(--line)] px-4 py-8 text-[13px] text-[var(--ink-3)] md:px-6">
           © 2026 Alfeus Xiesi Delroy. Built with React, TypeScript and Motion.
         </footer>
       </div>
