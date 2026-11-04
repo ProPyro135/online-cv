@@ -435,10 +435,13 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
     }
   };
 
-  // One continuous glide at a low, steady speed. It eases off (never jumps) while unbuilt work sits in
-  // the top half of the screen, and picks back up once the crew has caught up.
+  // One continuous glide at a steady speed. It only starts once the opening screen is fully built
+  // (so the photo at the top of a phone screen is drawn before anything moves), then eases off (never
+  // jumps) while unbuilt work sits high on the screen, and picks back up once the crew has caught up.
   const cruise = innerWidth < 640 ? 130 : 120; // px per second
   const maxY = () => document.documentElement.scrollHeight - innerHeight;
+  // Same line as ready(): anything below it only becomes workable once we scroll, so it can't hold the start.
+  const opening = tasks.filter((t) => t.top - scrollY < innerHeight - 24);
   let pos = scrollY, v = 0, prev = performance.now();
   const glide = (now: number) => {
     if (!alive) return;
@@ -453,9 +456,9 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
         t.taken = t.done = true;
         t.el.removeAttribute(HIDE);
         built++;
-      } else if (y < innerHeight * 0.5) behind += y < innerHeight * 0.2 ? 3 : 1;
+      } else if (y < innerHeight * 0.5) behind += y < innerHeight * 0.25 ? 6 : 1; // near the top: brake hard
     }
-    const target = cruise * clamp(1 - (behind - 1) / 5, 0, 1);
+    const target = opening.some((t) => !t.done) ? 0 : cruise * clamp(1 - (behind - 1) / 5, 0, 1);
     v += (target - v) * Math.min(1, dt * 1.6);
     pos = Math.min(maxY(), pos + v * dt);
     scrollTo({ top: pos, behavior: 'instant' });

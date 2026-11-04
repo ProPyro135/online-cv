@@ -134,7 +134,10 @@ export default function App() {
     history.scrollRestoration = 'manual';
     scrollTo(0, 0);
     let cancelled = false;
-    document.fonts.ready.then(() =>
+    // Wait for fonts and the profile photo (slow on phones), but never more than 2.5s.
+    const photo = document.querySelector<HTMLImageElement>('img[data-hero-photo]');
+    const ready = Promise.all([document.fonts.ready, photo?.decode().catch(() => {})]);
+    Promise.race([ready, new Promise((r) => setTimeout(r, 2500))]).then(() =>
       requestAnimationFrame(() => {
         if (!cancelled) toggleSwarmBuild(setIsBuilding);
       }),
