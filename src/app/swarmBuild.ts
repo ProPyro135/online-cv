@@ -126,7 +126,7 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
 
   const layer = document.createElement('div');
   layer.className = 'sb-layer';
-  layer.innerHTML = '<div class="sb-hint">Rebuilding this view · click to skip</div>';
+  layer.innerHTML = '<div class="sb-hint">Building the page · click or Esc to skip</div>';
   document.body.appendChild(layer);
   for (const t of tasks) t.el.setAttribute(HIDE, '');
 
