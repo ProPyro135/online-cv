@@ -6,6 +6,9 @@ import ProfilePhoto from './components/ProfilePhoto';
 import Reveal from './components/Reveal';
 import SkillsSection from './components/SkillsSection';
 import { toggleSwarmBuild } from './swarmBuild';
+import devmatchTeam from '../imports/devmatch-team.jpg';
+import devmatchStage from '../imports/devmatch-stage.jpg';
+import devmatchSelfie from '../imports/devmatch-selfie.jpg';
 import ResumeDownload, { type Lang } from './components/ResumeDownload';
 
 function SectionHead({ title, lede }: { title: string; lede?: string }) {
@@ -316,6 +319,25 @@ export default function App() {
               <p className="mt-4 text-[17px] leading-[1.47]">
                 Built the interface for “DocTour”, a blockchain-based medical tourism app, and integrated it with the MasChain API.
               </p>
+              {/* Proof: the winners' screen at the awards (opens full size) */}
+              <div className="mt-6 grid grid-cols-2 gap-2 md:grid-cols-[1.78fr_1fr_1fr] md:gap-3">
+                {[
+                  { src: devmatchTeam, alt: 'The DocTour team on stage under the “MasChain Tourism 1st – 1000 USD DocTour” winners screen', wide: true },
+                  { src: devmatchStage, alt: 'Team photo beside the APUBCC banner after winning the MasChain Tourism track' },
+                  { src: devmatchSelfie, alt: 'Selfie with the team in front of the DocTour winners screen' },
+                ].map((ph) => (
+                  <a
+                    key={ph.src}
+                    href={ph.src}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`press block overflow-hidden rounded-[18px] ${ph.wide ? 'col-span-2 aspect-[4/3] md:col-span-1 md:aspect-auto' : 'aspect-[3/4]'}`}
+                  >
+                    <img src={ph.src} alt={ph.alt} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 hover:scale-[1.03]" />
+                  </a>
+                ))}
+              </div>
+              <p className="mt-2 text-[13px] text-[var(--ink-3)]">Awards night, MasChain Tourism Track · tap a photo to view it full size</p>
             </Row>
             <Row when="Nov 2023" where="Kuala Lumpur">
               <h4 className="text-[21px] font-semibold leading-[1.3] tracking-[-0.015em]">2nd Place, APU Entrepreneurship</h4>
