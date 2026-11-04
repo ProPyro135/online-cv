@@ -1,8 +1,9 @@
-import { Award, Briefcase, GraduationCap, Code, ArrowUp, Mail, Phone, Linkedin, FileDown, ChevronDown, Menu, X } from 'lucide-react';
+import { Award, Briefcase, GraduationCap, Code, ArrowUp, Mail, Phone, Linkedin, FileDown, ChevronDown, Menu, X, MousePointer2, Github } from 'lucide-react';
 import { motion, useScroll, useTransform, useInView, useSpring } from 'motion/react';
 import { useRef, useState, useEffect } from 'react';
 import ProfilePhoto from './components/ProfilePhoto';
 import SkillsSection from './components/SkillsSection';
+import { toggleSwarmBuild } from './swarmBuild';
 import { useIsMobile } from './components/ui/use-mobile';
 import resumePdf from '../imports/Alfeus_Xiesi_Delroy_-_Resume.pdf';
 
@@ -71,9 +72,71 @@ const navigation = [
   { name: 'Contact', href: '#contact' },
 ];
 
+const projects = [
+  {
+    title: 'Ivision Chatbot',
+    subtitle: 'WhatsApp chatbot platform for businesses',
+    date: '2026 – Present',
+    tech: ['TypeScript', 'Next.js', 'Fastify', 'PostgreSQL', 'Redis', 'Supabase', 'Docker', 'WhatsApp Business API'],
+    points: [
+      'Automated WhatsApp chatbot connected to each business’s product catalogue and price list',
+      'Multi-tenant architecture with PostgreSQL Row-Level Security (RLS) isolating each business’s data',
+      'Credential encryption (AES-256-GCM) and HMAC verification of incoming messages',
+    ],
+    repo: 'ProPyro135/Ivision-Chatbot',
+  },
+  {
+    title: 'One Screener',
+    subtitle: 'Web screener for stocks, forex & gold',
+    date: '2026 – Present',
+    tech: ['Python', 'Streamlit'],
+    points: [
+      'Screens Indonesia Stock Exchange (IDX) stocks, forex and gold against user-defined criteria, replacing one-by-one manual checks',
+      'Manages historical market data with integrity checks and only displays metrics that have been measured',
+    ],
+  },
+  {
+    title: 'Propertus',
+    subtitle: 'Cloud-based property management system',
+    date: 'Oct 2025',
+    tech: ['React', 'TypeScript', 'ASP.NET Core 8', 'MySQL', 'AWS', 'Stripe', 'Vercel'],
+    points: [
+      'Four role-based dashboards covering assets, payments and maintenance',
+      'Stripe and Stripe Connect integration for rent payments and automatic fund distribution',
+      'JWT token authentication and two-factor verification (2FA/TOTP)',
+      'Deployed on AWS (EC2, RDS, Lambda, S3), including cloud storage and automatic thumbnail generation',
+    ],
+    repo: 'sqd2/Property-Management-System-AWS',
+  },
+  {
+    title: 'Geofence Security Patrol Verification System',
+    subtitle: 'Final Year Project',
+    date: 'Jan 2026',
+    tech: ['Ionic', 'Angular', 'Capacitor', 'Supabase'],
+    points: [
+      'GPS geofencing mobile app validating guards’ patrol routes and dwell time at each checkpoint',
+      'Hash-based verification to prevent tampering and keep patrol reports trustworthy',
+      'Offline-first architecture with automatic sync, real-time monitoring and report export',
+      'Managed with the RUP methodology and validated through User Acceptance Testing (UAT)',
+    ],
+    repo: 'ProPyro135/GSM',
+  },
+  {
+    title: 'Orb',
+    subtitle: '3D globe controlled by hand gestures',
+    date: '2026',
+    tech: ['TypeScript', 'Three.js', 'MediaPipe', 'Vite'],
+    points: [
+      'Web app that controls a 3D globe in real time through camera-based hand tracking',
+      'Supports webcam, Ultraleap sensor and mouse, with automatic fallback when a device fails',
+    ],
+    repo: 'ProPyro135/Ivision-3d-Hand-track',
+  },
+];
+
 const contactLinks = [
   { href: "mailto:dalfeusxiesi@gmail.com", icon: Mail, label: "Email", value: "dalfeusxiesi@gmail.com" },
-  { href: "tel:+628811232486", icon: Phone, label: "Phone", value: "+62 8811232486" },
+  { href: "tel:+628811232486", icon: Phone, label: "Phone", value: "+62 881 1232 486" },
   { href: "https://www.linkedin.com/in/alfeus-xiesi-delroy", icon: Linkedin, label: "LinkedIn", value: "alfeus-xiesi-delroy", external: true },
 ];
 
@@ -88,6 +151,7 @@ export default function App() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [activeSection, setActiveSection] = useState('about');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isBuilding, setIsBuilding] = useState(false);
   const heroRef = useRef(null);
 
   const { scrollYProgress: heroScrollProgress } = useScroll({
@@ -141,6 +205,7 @@ export default function App() {
 
       {/* Sticky Navigation */}
       <motion.nav
+        data-swarm-skip
         className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-[#0d0d0d]/90 border-b border-white/5"
         initial={{ y: -100 }}
         animate={{ y: 0 }}
@@ -157,6 +222,7 @@ export default function App() {
               AXD
             </motion.button>
 
+            <div className="flex items-center gap-2">
             <div className="hidden md:flex items-center gap-1">
               {navigation.map((item) => (
                 <button
@@ -182,6 +248,16 @@ export default function App() {
               ))}
             </div>
 
+            <button
+              type="button"
+              onClick={() => { setIsMobileNavOpen(false); toggleSwarmBuild(setIsBuilding); }}
+              className="motion-reduce:hidden flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-500 transition-colors hover:border-amber-500/40"
+              aria-label={isBuilding ? 'Stop the build animation' : 'Watch this view get built by animated cursors'}
+            >
+              {isBuilding ? <X className="h-4 w-4" /> : <MousePointer2 className="h-4 w-4" />}
+              <span className="hidden sm:inline">{isBuilding ? 'Stop' : 'Watch it build'}</span>
+            </button>
+
             <motion.button
               type="button"
               onClick={() => setIsMobileNavOpen((open) => !open)}
@@ -192,6 +268,7 @@ export default function App() {
             >
               {isMobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </motion.button>
+            </div>
           </div>
         </div>
         {isMobileNavOpen && (
@@ -280,9 +357,18 @@ export default function App() {
                   animate={{ opacity: 1 }}
                   transition={{ duration: 1, delay: 1.1 }}
                 >
-                  Computer Science Engineering Student
+                  Computer Science Graduate
                   <br />
                   <span className="text-white/90">Full Stack Developer</span>
+                </motion.p>
+
+                <motion.p
+                  className="mb-8 max-w-xl text-base leading-relaxed text-white/50"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 1, delay: 1.2 }}
+                >
+                  I build offline-first mobile apps and full-stack platforms, from plantation vehicle logging to GPS-verified security patrols. Interested in full-stack development, AWS cloud deployment and applied AI.
                 </motion.p>
 
                 <motion.div
@@ -291,7 +377,7 @@ export default function App() {
                   animate={{ opacity: 1 }}
                   transition={{ duration: 1, delay: 1.3 }}
                 >
-                  {['React', 'Angular', 'AWS', 'Python'].map((tech, i) => (
+                  {['TypeScript', 'React', 'Angular', 'AWS'].map((tech, i) => (
                     <motion.span
                       key={tech}
                       className="px-5 py-2.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-sm text-amber-500 backdrop-blur-sm"
@@ -442,18 +528,27 @@ export default function App() {
                       <motion.h3
                         className="text-2xl font-semibold text-white mb-3 group-hover:text-amber-500 transition-colors"
                       >
-                        Asia Pacific University
+                        Asia Pacific University of Technology & Innovation (APU)
                       </motion.h3>
-                      <p className="text-lg text-white/60">Bachelor of Engineering with Honors in Computer Science</p>
+                      <p className="text-lg text-white/60">Bachelor of Science (Honours) in Computer Science</p>
+                      <p className="mt-1 text-white/50">Dual degree with De Montfort University (DMU), Leicester, UK</p>
                     </div>
-                    <span className="text-sm text-white/50 md:whitespace-nowrap">March 2023 – February 2026</span>
+                    <div className="text-sm text-white/50 md:text-right md:whitespace-nowrap">
+                      <p>March 2023 – February 2026</p>
+                      <p>Kuala Lumpur, Malaysia</p>
+                    </div>
                   </div>
-                  <motion.div
-                    className="inline-block px-6 py-3 rounded-lg bg-amber-500/10 border border-amber-500/20"
-                    whileHover={{ scale: 1.05 }}
-                  >
-                    <span className="text-amber-500 font-semibold text-lg">CGPA: 3.08</span>
-                  </motion.div>
+                  <div className="flex flex-wrap gap-3">
+                    <motion.div
+                      className="inline-block px-6 py-3 rounded-lg bg-amber-500/10 border border-amber-500/20"
+                      whileHover={{ scale: 1.05 }}
+                    >
+                      <span className="text-amber-500 font-semibold text-lg">CGPA: 3.03</span>
+                    </motion.div>
+                    <div className="inline-block px-6 py-3 rounded-lg border border-white/10 bg-white/5">
+                      <span className="text-white/70 text-lg">Second Class Honours, First Division</span>
+                    </div>
+                  </div>
                 </motion.div>
               </AnimatedContent>
             </div>
@@ -496,17 +591,17 @@ export default function App() {
                     <div className="flex flex-col md:flex-row justify-between md:items-start gap-3 md:gap-6 mb-6 md:mb-8">
                       <div className="min-w-0">
                         <h3 className="text-xl md:text-2xl font-semibold text-white mb-2 md:mb-3 group-hover:text-amber-500 transition-colors">Web Developer Intern</h3>
-                        <p className="text-base md:text-lg text-amber-500">PT Setrakarya Manunggal</p>
+                        <p className="text-base md:text-lg text-amber-500">PT Setrakarya Manunggal (Karyamas Plantation Group)</p>
                       </div>
                       <span className="text-sm text-white/50 md:whitespace-nowrap">December 2024 – May 2025</span>
                     </div>
 
                     <ul className="space-y-3 md:space-y-4 text-white/60">
                       {[
-                        'Developed a Trip Monitoring Mobile Application using Angular and Ionic to digitalize transportation crossing operations',
-                        'Designed and implemented the complete trip lifecycle workflow (Setup, Login, Vehicle Entry, Trip Completion, Data Sync, Reporting)',
-                        'Built an offline-first architecture using SQLite, synchronizing trip data to a web backend via REST API',
-                        'Developed backend services using PHP and MySQL, including master data management and monitoring reports'
+                        'Developed a Trip Monitoring mobile app for logging vehicle crossings as the internship project',
+                        'Designed an offline-first architecture, from data entry to reporting, that keeps working without internet and syncs automatically',
+                        'Built the backend for master data management, tariff configuration and operational monitoring reports',
+                        'Tech: Angular, Ionic, SQLite, PHP, MySQL, REST API'
                       ].map((item, index) => (
                         <motion.li
                           key={index}
@@ -559,7 +654,37 @@ export default function App() {
                         </div>
                       </div>
                       <p className="text-white/60 text-base">
-                        Frontend Developer & Backend Integrator for "DocTour", a medical tourism app. Built the UI using Flutter/Dart and supported MasChain Testnet API integration for secure, blockchain-based data management.
+                        Developer of "DocTour", a blockchain-based medical tourism app, responsible for building the user interface and integrating the system with the MasChain API.
+                      </p>
+                    </div>
+                  </motion.div>
+                </AnimatedContent>
+
+                <AnimatedContent delay={0.5}>
+                  <motion.div
+                    className="rounded-2xl border border-amber-500/20 bg-amber-500/5 backdrop-blur-sm p-6 md:p-10 relative overflow-hidden group hover:border-amber-500/40 transition-colors duration-500"
+                    whileHover={{
+                      y: -8,
+                      boxShadow: "0 30px 60px rgba(245, 158, 11, 0.2)",
+                    }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <div className="relative">
+                      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-6 mb-6">
+                        <div className="flex items-start gap-3 md:gap-4">
+                          <Award className="h-8 w-8 text-amber-500 flex-shrink-0" />
+                          <div>
+                            <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-amber-500 transition-colors">APU Entrepreneurship – 2nd Place</h3>
+                            <p className="text-amber-500">Pitch Presenter & Concept Developer</p>
+                          </div>
+                        </div>
+                        <div className="text-left md:text-right text-sm text-white/50 md:whitespace-nowrap">
+                          <p>Nov 2023</p>
+                          <p>Kuala Lumpur</p>
+                        </div>
+                      </div>
+                      <p className="text-white/60 text-base">
+                        Developed the concept for a gamified walking app that rewards users by distance travelled, and pitched its value and market potential to the judging panel.
                       </p>
                     </div>
                   </motion.div>
@@ -595,185 +720,70 @@ export default function App() {
               </AnimatedContent>
 
               <div className="grid md:grid-cols-2 gap-8">
-                {/* Project 1 */}
-                <motion.div
-                  className="group rounded-2xl border border-white/10 bg-[#1f1f1f]/80 backdrop-blur-sm p-8 hover:border-amber-500/30 transition-all duration-500 relative overflow-hidden"
-                  initial={{ opacity: 0, y: 60, rotateX: 10 }}
-                  whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
-                  viewport={{ once: true, amount: 0.3 }}
-                  transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-                  whileHover={{
-                    y: -12,
-                    rotateX: 2,
-                    boxShadow: "0 30px 60px rgba(0, 0, 0, 0.3)"
-                  }}
-                >
+                {projects.map((project, index) => (
                   <motion.div
-                    className="absolute -top-20 -right-20 hidden w-40 h-40 bg-amber-500/15 rounded-full blur-3xl md:block"
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 4, repeat: Infinity }}
-                  />
-                  <div className="relative mb-6">
-                    <div className="flex items-start justify-between gap-4 mb-4">
-                      <motion.h3
-                        className="text-xl font-semibold text-white group-hover:text-amber-500 transition-colors"
-                        whileHover={{ x: 5 }}
-                      >
-                        Geofence Security Patrol Verification System
-                      </motion.h3>
-                      <span className="text-xs text-white/50 whitespace-nowrap">Jan 2026</span>
+                    key={project.title}
+                    className="group rounded-2xl border border-white/10 bg-[#1f1f1f]/80 backdrop-blur-sm p-8 hover:border-amber-500/30 transition-all duration-500 relative overflow-hidden"
+                    initial={{ opacity: 0, y: 60, rotateX: 10 }}
+                    whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
+                    viewport={{ once: true, amount: 0.3 }}
+                    transition={{ duration: 0.8, delay: 0.1 + (index % 2) * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                    whileHover={{
+                      y: -12,
+                      rotateX: 2,
+                      boxShadow: "0 30px 60px rgba(0, 0, 0, 0.3)"
+                    }}
+                  >
+                    <motion.div
+                      className="absolute -top-20 -right-20 hidden w-40 h-40 bg-amber-500/15 rounded-full blur-3xl md:block"
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 4, repeat: Infinity, delay: index }}
+                    />
+                    <div className="relative mb-6">
+                      <div className="flex items-start justify-between gap-4 mb-2">
+                        <h3 className="text-xl font-semibold text-white group-hover:text-amber-500 transition-colors">
+                          {project.title}
+                        </h3>
+                        <span className="text-xs text-white/50 whitespace-nowrap">{project.date}</span>
+                      </div>
+                      <p className="mb-4 text-sm text-amber-500/80">{project.subtitle}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {project.tech.map((tech, i) => (
+                          <motion.span
+                            key={tech}
+                            className="px-3 py-1.5 rounded-full bg-amber-500/10 text-xs text-amber-500 border border-amber-500/20"
+                            initial={{ opacity: 0, scale: 0 }}
+                            whileInView={{ opacity: 1, scale: 1 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.4, delay: 0.3 + i * 0.05, ease: "backOut" }}
+                            whileHover={{ scale: 1.1, y: -2 }}
+                          >
+                            {tech}
+                          </motion.span>
+                        ))}
+                      </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {['Ionic', 'Angular', 'Supabase', 'SQLite'].map((tech, i) => (
-                        <motion.span
-                          key={tech}
-                          className="px-3 py-1.5 rounded-full bg-amber-500/10 text-xs text-amber-500 border border-amber-500/20"
-                          initial={{ opacity: 0, scale: 0 }}
-                          whileInView={{ opacity: 1, scale: 1 }}
-                          viewport={{ once: true }}
-                          transition={{ duration: 0.4, delay: 0.3 + i * 0.05, ease: "backOut" }}
-                          whileHover={{ scale: 1.1, y: -2 }}
-                        >
-                          {tech}
-                        </motion.span>
+                    <ul className="relative space-y-3 text-sm text-white/60">
+                      {project.points.map((point) => (
+                        <li key={point} className="flex gap-2">
+                          <span className="text-amber-500 mt-1 flex-shrink-0">•</span>
+                          <span>{point}</span>
+                        </li>
                       ))}
-                    </div>
-                  </div>
-                  <ul className="space-y-3 text-sm text-white/60">
-                    <li className="flex gap-2">
-                      <span className="text-amber-500 mt-1 flex-shrink-0">•</span>
-                      <span>Built offline-first mobile application with GPS-based geofencing</span>
-                    </li>
-                    <li className="flex gap-2">
-                      <span className="text-amber-500 mt-1 flex-shrink-0">•</span>
-                      <span>Implemented sequential checkpoints and dwell-time validation</span>
-                    </li>
-                    <li className="flex gap-2">
-                      <span className="text-amber-500 mt-1 flex-shrink-0">•</span>
-                      <span>Integrated hash-based integrity verification for patrol records</span>
-                    </li>
-                  </ul>
-                </motion.div>
-
-                {/* Project 2 */}
-                <motion.div
-                  className="group rounded-2xl border border-white/10 bg-[#1f1f1f]/80 backdrop-blur-sm p-8 hover:border-amber-500/30 transition-all duration-500 relative overflow-hidden"
-                  initial={{ opacity: 0, y: 60, rotateX: 10 }}
-                  whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
-                  viewport={{ once: true, amount: 0.3 }}
-                  transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                  whileHover={{
-                    y: -12,
-                    rotateX: 2,
-                    boxShadow: "0 30px 60px rgba(0, 0, 0, 0.15)"
-                  }}
-                >
-                  <motion.div
-                    className="absolute -top-20 -right-20 hidden w-40 h-40 bg-amber-500/15 rounded-full blur-3xl md:block"
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 4, repeat: Infinity, delay: 1 }}
-                  />
-                  <div className="relative mb-6">
-                    <div className="flex items-start justify-between gap-4 mb-4">
-                      <motion.h3
-                        className="text-xl font-semibold text-white group-hover:text-amber-500 transition-colors"
-                        whileHover={{ x: 5 }}
+                    </ul>
+                    {project.repo && (
+                      <a
+                        href={`https://github.com/${project.repo}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="relative mt-6 inline-flex items-center gap-2 text-sm text-white/50 hover:text-amber-500 transition-colors"
                       >
-                        Cloud-based Property Management System
-                      </motion.h3>
-                      <span className="text-xs text-white/50 whitespace-nowrap">Oct 2025</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {['AWS', 'EC2', 'Lambda', 'MySQL'].map((tech, i) => (
-                        <motion.span
-                          key={tech}
-                          className="px-3 py-1.5 rounded-full bg-amber-500/10 text-xs text-amber-500 border border-amber-500/20"
-                          initial={{ opacity: 0, scale: 0 }}
-                          whileInView={{ opacity: 1, scale: 1 }}
-                          viewport={{ once: true }}
-                          transition={{ duration: 0.4, delay: 0.4 + i * 0.05, ease: "backOut" }}
-                          whileHover={{ scale: 1.1, y: -2 }}
-                        >
-                          {tech}
-                        </motion.span>
-                      ))}
-                    </div>
-                  </div>
-                  <ul className="space-y-3 text-sm text-white/50">
-                    <li className="flex gap-2">
-                      <span className="text-amber-500 mt-1 flex-shrink-0">•</span>
-                      <span>Developed cloud-based system automating tenant and document management</span>
-                    </li>
-                    <li className="flex gap-2">
-                      <span className="text-amber-500 mt-1 flex-shrink-0">•</span>
-                      <span>Implemented hybrid architecture with EC2, ALB, and RDS</span>
-                    </li>
-                    <li className="flex gap-2">
-                      <span className="text-amber-500 mt-1 flex-shrink-0">•</span>
-                      <span>Integrated serverless workflows with API Gateway and Lambda</span>
-                    </li>
-                  </ul>
-                </motion.div>
-
-                {/* Project 3 */}
-                <motion.div
-                  className="group rounded-2xl border border-white/10 bg-[#1f1f1f]/80 backdrop-blur-sm p-8 hover:border-amber-500/30 transition-all duration-500 relative overflow-hidden"
-                  initial={{ opacity: 0, y: 60, rotateX: 10 }}
-                  whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
-                  viewport={{ once: true, amount: 0.3 }}
-                  transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                  whileHover={{
-                    y: -12,
-                    rotateX: 2,
-                    boxShadow: "0 30px 60px rgba(0, 0, 0, 0.15)"
-                  }}
-                >
-                  <motion.div
-                    className="absolute -top-20 -right-20 hidden w-40 h-40 bg-amber-500/15 rounded-full blur-3xl md:block"
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 4, repeat: Infinity, delay: 2 }}
-                  />
-                  <div className="relative mb-6">
-                    <div className="flex items-start justify-between gap-4 mb-4">
-                      <motion.h3
-                        className="text-xl font-semibold text-white group-hover:text-amber-500 transition-colors"
-                        whileHover={{ x: 5 }}
-                      >
-                        Web and Email Server (RHEL)
-                      </motion.h3>
-                      <span className="text-xs text-white/50 whitespace-nowrap">Apr 2024</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {['Linux', 'Apache', 'DNS', 'SSL/TLS'].map((tech, i) => (
-                        <motion.span
-                          key={tech}
-                          className="px-3 py-1.5 rounded-full bg-amber-500/10 text-xs text-amber-500 border border-amber-500/20"
-                          initial={{ opacity: 0, scale: 0 }}
-                          whileInView={{ opacity: 1, scale: 1 }}
-                          viewport={{ once: true }}
-                          transition={{ duration: 0.4, delay: 0.5 + i * 0.05, ease: "backOut" }}
-                          whileHover={{ scale: 1.1, y: -2 }}
-                        >
-                          {tech}
-                        </motion.span>
-                      ))}
-                    </div>
-                  </div>
-                  <ul className="space-y-3 text-sm text-white/50">
-                    <li className="flex gap-2">
-                      <span className="text-amber-500 mt-1 flex-shrink-0">•</span>
-                      <span>Built local server environment with Rocky Linux and Ubuntu VMs</span>
-                    </li>
-                    <li className="flex gap-2">
-                      <span className="text-amber-500 mt-1 flex-shrink-0">•</span>
-                      <span>Configured BIND DNS, DHCP, Apache, Postfix & Dovecot services</span>
-                    </li>
-                    <li className="flex gap-2">
-                      <span className="text-amber-500 mt-1 flex-shrink-0">•</span>
-                      <span>Implemented SSL/TLS for secure communications</span>
-                    </li>
-                  </ul>
-                </motion.div>
+                        <Github className="h-4 w-4" />
+                        {project.repo}
+                      </a>
+                    )}
+                  </motion.div>
+                ))}
               </div>
             </div>
           </FullScreenSection>
@@ -817,7 +827,7 @@ export default function App() {
                     <p className="mb-4 text-sm uppercase tracking-wider text-amber-500">Available for opportunities</p>
                     <h3 className="mb-4 text-3xl font-semibold text-white">Let&apos;s connect.</h3>
                     <p className="mb-8 max-w-xl text-base leading-relaxed text-white/60">
-                      I am open to internship, graduate, and junior developer opportunities where I can contribute across frontend, backend, and cloud-based systems.
+                      I am open to graduate and junior developer roles where I can contribute across frontend, backend, cloud and AI-powered systems.
                     </p>
                     <div className="flex flex-wrap gap-3">
                       <motion.a
@@ -895,6 +905,7 @@ export default function App() {
 
       {/* Scroll to top button */}
       <motion.button
+        data-swarm-skip
         className="fixed bottom-8 right-8 p-4 rounded-full bg-amber-500 text-white shadow-lg z-50 backdrop-blur-sm"
         onClick={scrollToTop}
         initial={{ opacity: 0, scale: 0, rotate: -180 }}

@@ -6,33 +6,33 @@ const categories = [
     icon: Code,
     title: 'Languages',
     delay: 0.1,
-    skills: ['Python', 'JavaScript', 'TypeScript', 'C/C++', 'PHP', 'Dart'],
+    skills: ['TypeScript', 'Python', 'C', 'C++', 'C#', 'PHP', 'Dart'],
   },
   {
     icon: Globe,
-    title: 'Frameworks & Tools',
+    title: 'Frameworks',
     delay: 0.2,
-    skills: ['React', 'Angular', 'Ionic', 'Flutter', 'MySQL', 'SQLite', 'Supabase'],
+    skills: ['Angular', 'React', 'Next.js', 'Ionic', 'Flutter', '.NET', 'ASP.NET Core'],
   },
   {
     icon: Wrench,
-    title: 'Cloud & DevOps',
+    title: 'Database & Cloud',
     delay: 0.3,
-    skills: ['AWS (EC2, Lambda, RDS)', 'Git', 'Linux (RHEL)', 'Agile'],
+    skills: ['PostgreSQL', 'MySQL', 'SQLite', 'Redis', 'Supabase', 'AWS (EC2, RDS, Lambda, S3)', 'Docker'],
   },
   {
     icon: Award,
-    title: 'Professional',
+    title: 'Systems & Methodology',
     delay: 0.4,
-    skills: ['Leadership', 'Problem Solving', 'Critical Thinking', 'Public Speaking', 'Team Collaboration'],
+    skills: ['Linux', 'DNS', 'Apache', 'SSL/TLS', 'REST API', 'Agile', 'RUP'],
   },
 ];
 
 const spokenLanguages = [
-  { name: 'English', level: 'Fluent', pct: 100 },
-  { name: 'Indonesian', level: 'Fluent', pct: 100 },
-  { name: 'Malay', level: 'Fluent', pct: 100 },
-  { name: 'German', level: 'Intermediate', pct: 70 },
+  { name: 'Indonesian', level: 'Native', pct: 100 },
+  { name: 'English', level: 'Fluent (IELTS 6.5)', pct: 90 },
+  { name: 'Malay', level: 'Fluent', pct: 90 },
+  { name: 'German', level: 'Upper Intermediate (B2)', pct: 75 },
 ];
 
 export default function SkillsSection() {
