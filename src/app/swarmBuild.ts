@@ -437,7 +437,7 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
 
   // One continuous glide at a low, steady speed. It eases off (never jumps) while unbuilt work sits in
   // the top half of the screen, and picks back up once the crew has caught up.
-  const cruise = innerWidth < 640 ? 70 : 60; // px per second
+  const cruise = innerWidth < 640 ? 130 : 120; // px per second
   const maxY = () => document.documentElement.scrollHeight - innerHeight;
   let pos = scrollY, v = 0, prev = performance.now();
   const glide = (now: number) => {
