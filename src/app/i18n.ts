@@ -95,6 +95,7 @@ const en = {
   // The build movie's progress pill (read by swarmBuild.ts)
   building: 'Building',
   done: 'Done',
+  skipHint: 'Scroll or tap anywhere to skip',
 };
 
 const id: typeof en = {
@@ -190,6 +191,7 @@ const id: typeof en = {
   footer: '© 2026 Alfeus Xiesi Delroy. Dibuat dengan React, TypeScript, dan Motion.',
   building: 'Membangun',
   done: 'Selesai',
+  skipHint: 'Scroll atau ketuk di mana saja untuk melewati',
 };
 
 export const COPY = { en, id };

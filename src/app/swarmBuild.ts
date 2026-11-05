@@ -41,6 +41,11 @@ const CSS = `
 .sb-bar::after{content:'';position:absolute;inset:0;width:30%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent);animation:sb-shine 1.4s linear infinite}
 @keyframes sb-shine{from{transform:translateX(-100%)}to{transform:translateX(400%)}}
 @media (max-width:640px){.sb-meter{display:none}}
+.sb-hint{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);padding:6px 12px;border-radius:999px;background:rgba(22,22,23,.7);color:rgba(245,245,247,.8);font:12px/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;white-space:nowrap;pointer-events:none;opacity:0;animation:sb-hint 7s 1.2s ease forwards;z-index:3}
+@keyframes sb-hint{8%,80%{opacity:1}100%{opacity:0}}
+.sb-ring{position:fixed;border-radius:999px;border:2px solid #2997ff;pointer-events:none;animation:sb-ring 1s cubic-bezier(.2,.8,.2,1) 2;z-index:2}
+@keyframes sb-ring{from{opacity:.9;transform:scale(1)}to{opacity:0;transform:scale(1.35)}}
+@media (prefers-reduced-motion:reduce){.sb-hint,.sb-ring{animation:none}}
 `;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -150,7 +155,7 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
   const layer = document.createElement('div');
   layer.className = 'sb-layer';
   layer.innerHTML =
-    `<div class="sb-bar"></div><div class="sb-stop" role="status"><span>${tx.building} <b>${tx.nav.about}</b></span><span class="sb-meter"><i></i></span><span class="sb-pct">0%</span><button type="button" aria-label="${tx.stopAria}"><svg width="9" height="9"><rect width="9" height="9" rx="1.5" fill="currentColor"/></svg>${tx.stop}</button></div>`;
+    `<div class="sb-bar"></div><div class="sb-stop" role="status"><span>${tx.building} <b>${tx.nav.about}</b></span><span class="sb-meter"><i></i></span><span class="sb-pct">0%</span><button type="button" aria-label="${tx.stopAria}"><svg width="9" height="9"><rect width="9" height="9" rx="1.5" fill="currentColor"/></svg>${tx.stop}</button></div><div class="sb-hint">${tx.skipHint}</div>`;
   document.body.appendChild(layer);
   for (const t of tasks) {
     t.el.setAttribute(HIDE, '');
@@ -475,9 +480,30 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
     built = total;
     label.textContent = tx.done;
     await sleep(500);
-    // Everyone leaves the way they came, then the real page takes over.
     cursors.forEach(unpark);
     layer.querySelector('.sb-stop')?.remove();
+    // Final beat: the crew gathers round the résumé button and it pulses, so the call to action is the last thing seen.
+    const cta = [...document.querySelectorAll<HTMLElement>('a[download]')].pop();
+    const r = cta?.getBoundingClientRect();
+    if (r && r.top > 56 && r.bottom < innerHeight - 8) {
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      await Promise.all(
+        cursors.map((c, i) => {
+          c.el.dataset.parked = ''; // logo-only tags, so they don't cover the button text
+          // Fan out along the lower half (tags hang down-right of the tip, away from the label).
+          const a = Math.PI * (i / Math.max(1, cursors.length - 1));
+          return c.moveTo(cx + Math.cos(a) * (r.width / 2 + 24), cy + Math.sin(a) * (r.height / 2 + 18));
+        }),
+      );
+      if (!alive) return;
+      const ring = document.createElement('div');
+      ring.className = 'sb-ring';
+      Object.assign(ring.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
+      layer.appendChild(ring);
+      await sleep(1400);
+      if (!alive) return;
+    }
+    // Everyone leaves the way they came, then the real page takes over.
     await Promise.all(cursors.map((c, i) => c.moveTo(i % 2 ? innerWidth + 60 : -60, c.y)));
     stop();
   })();

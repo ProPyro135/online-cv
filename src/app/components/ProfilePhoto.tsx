@@ -1,4 +1,4 @@
-import profilePhoto from '../../imports/1651352529991.jpg';
+import profilePhoto from '../../imports/1651352529991.webp';
 
 export default function ProfilePhoto() {
   return (
