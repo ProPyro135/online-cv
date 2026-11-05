@@ -2,15 +2,19 @@ import { useEffect, useRef } from 'react';
 
 // A design-canvas dot grid behind the whole page. Dots near the pointer swell, brighten
 // toward the accent and lean away from it; the grid drifts at a fraction of scroll speed for depth.
-// Also feeds --px/--py (smoothed pointer) to the page for the hero glow and tile spotlights.
+// Also drives the pointer glow, the hero aurora fade and each card's --lx/--ly spotlight.
 const GAP = 28;
 const REACH = 170;
 
 export default function Backdrop() {
   const ref = useRef<HTMLCanvasElement>(null);
+  const glowRef = useRef<HTMLDivElement>(null);
+  const auroraRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const canvas = ref.current!;
+    const glow = glowRef.current!, aurora = auroraRef.current!;
+    const tiles = document.getElementsByClassName('tile') as HTMLCollectionOf<HTMLElement>; // live list
     const ctx = canvas.getContext('2d')!;
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const target = { x: innerWidth * 0.7, y: innerHeight * 0.35 };
@@ -51,9 +55,22 @@ export default function Backdrop() {
     const tick = () => {
       p.x += (target.x - p.x) * 0.16;
       p.y += (target.y - p.y) * 0.16;
-      document.documentElement.style.setProperty('--px', `${p.x}px`);
-      document.documentElement.style.setProperty('--py', `${p.y}px`);
-      document.documentElement.style.setProperty('--hero', `${Math.max(0, 1 - scrollY / (h * 0.9))}`);
+      // Write only to the elements that use these values; a variable on <html> would make the browser
+      // re-style the whole page every frame.
+      glow.style.background = `radial-gradient(520px circle at ${p.x}px ${p.y}px, rgba(41,151,255,0.09), transparent 70%)`;
+      aurora.style.opacity = `${Math.max(0, 1 - scrollY / (h * 0.9))}`;
+      if (!still) {
+        for (const t of tiles) {
+          const r = t.getBoundingClientRect();
+          const near = p.x > r.left - 260 && p.x < r.right + 260 && p.y > r.top - 260 && p.y < r.bottom + 260;
+          if (near || t.dataset.lit) {
+            t.style.setProperty('--lx', near ? `${p.x - r.left}px` : '-999px');
+            t.style.setProperty('--ly', near ? `${p.y - r.top}px` : '-999px');
+            if (near) t.dataset.lit = '1';
+            else delete t.dataset.lit;
+          }
+        }
+      }
       draw();
       const moving = Math.abs(target.x - p.x) + Math.abs(target.y - p.y) > 0.3;
       raf = moving || ++idle < 2 ? requestAnimationFrame(tick) : 0;
@@ -84,10 +101,10 @@ export default function Backdrop() {
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0">
       {/* Aurora that belongs to the hero: fades out as you scroll past it */}
-      <div className="aurora absolute inset-0" />
+      <div ref={auroraRef} className="aurora absolute inset-0" />
       <canvas ref={ref} className="absolute inset-0 h-full w-full" />
       {/* Soft light that follows the pointer */}
-      <div className="absolute inset-0 bg-[radial-gradient(520px_circle_at_var(--px)_var(--py),rgba(41,151,255,0.09),transparent_70%)]" />
+      <div ref={glowRef} className="absolute inset-0" />
     </div>
   );
 }

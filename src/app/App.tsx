@@ -256,7 +256,7 @@ export default function App() {
 
             <dl className="mt-16 grid grid-cols-2 gap-px overflow-hidden rounded-[22px] border border-[var(--line)] bg-[var(--line)] md:grid-cols-4">
               {highlights.map((h) => (
-                <div key={h.label} className="bg-[rgba(10,10,11,0.82)] px-5 py-5 backdrop-blur-md md:px-6">
+                <div key={h.label} className="bg-[rgba(10,10,11,0.93)] px-5 py-5 md:px-6">
                   <dd className="text-[28px] font-semibold leading-none tracking-[-0.025em] text-[var(--ink)]">{h.value}</dd>
                   <dt className="mt-2 text-[15px] leading-[1.35] text-[var(--ink-2)]">{h.label}</dt>
                 </div>
