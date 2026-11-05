@@ -1,6 +1,6 @@
 import { Mail, Phone, Linkedin, Menu, X, MousePointer2, Github, ChevronRight } from 'lucide-react';
 import { MotionConfig } from 'motion/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Backdrop from './components/Backdrop';
 import ProfilePhoto from './components/ProfilePhoto';
 import Reveal from './components/Reveal';
@@ -22,15 +22,72 @@ function SectionHead({ title, lede }: { title: string; lede?: string }) {
 }
 
 /** Résumé row: when/where on the left, what on the right. Stacks on phones. */
-function Row({ when, where, children }: { when: string; where?: string; children: React.ReactNode }) {
+function Row({ when, where, children, wide }: { when: string; where?: string; children: React.ReactNode; wide?: React.ReactNode }) {
   return (
-    <Reveal className="grid gap-2 border-t border-[var(--line)] py-8 md:grid-cols-[220px_1fr] md:gap-10">
+    <Reveal className="grid gap-2 border-t border-[var(--line)] py-8 md:grid-cols-[220px_1fr] md:gap-x-10 md:gap-y-0">
       <div className="text-[15px] leading-[1.45] text-[var(--ink-2)]">
         <p>{when}</p>
         {where && <p>{where}</p>}
       </div>
       <div>{children}</div>
+      {/* Full-width extra (e.g. a photo gallery) that shouldn't be squeezed into the right column */}
+      {wide && <div className="md:col-span-2">{wide}</div>}
     </Reveal>
+  );
+}
+
+const devmatchPhotos = [
+  { src: devmatchTeam, alt: 'The DocTour team on stage under the “MasChain Tourism 1st – 1000 USD DocTour” winners screen', wide: true },
+  { src: devmatchStage, alt: 'Team photo beside the APUBCC banner after winning the MasChain Tourism track' },
+  { src: devmatchSelfie, alt: 'Selfie with the team in front of the DocTour winners screen' },
+];
+
+/** Hackathon photos. Desktop: one row at full width, every photo uncropped and the same height
+ *  (flex-grow = aspect ratio). Phones: the wide one on top, two portraits below. Tap opens a lightbox. */
+function Gallery() {
+  const [open, setOpen] = useState<(typeof devmatchPhotos)[number] | null>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    if (open) dialog.current?.showModal();
+  }, [open]);
+  return (
+    <>
+      <div className="mt-8 grid grid-cols-2 gap-2 md:mt-10 md:flex md:gap-3">
+        {devmatchPhotos.map((ph) => (
+          <a
+            key={ph.src}
+            href={ph.src}
+            onClick={(e) => {
+              e.preventDefault();
+              setOpen(ph);
+            }}
+            style={{ flex: `${ph.wide ? 4 / 3 : 3 / 4} 1 0` }}
+            className={`press group relative block min-w-0 overflow-hidden rounded-[20px] shadow-[0_1px_2px_rgba(0,0,0,0.5),0_12px_32px_-8px_rgba(0,0,0,0.6)] after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:ring-1 after:ring-inset after:ring-white/10 ${
+              ph.wide ? 'col-span-2 aspect-[4/3]' : 'aspect-[3/4]'
+            }`}
+          >
+            <img
+              src={ph.src}
+              alt={ph.alt}
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+            />
+          </a>
+        ))}
+      </div>
+      <p className="mt-3 text-[13px] text-[var(--ink-3)]">Awards night, MasChain Tourism Track · tap a photo to enlarge</p>
+      {open && (
+        <dialog
+          ref={dialog}
+          data-swarm-skip
+          onClose={() => setOpen(null)}
+          onClick={() => dialog.current?.close()}
+          className="lightbox m-auto cursor-zoom-out bg-transparent p-0 outline-none"
+        >
+          <img src={open.src} alt={open.alt} className="max-h-[88vh] max-w-[92vw] rounded-[20px] shadow-[0_24px_80px_rgba(0,0,0,0.7)]" />
+        </dialog>
+      )}
+    </>
   );
 }
 
@@ -256,7 +313,7 @@ export default function App() {
               <ProfilePhoto />
             </div>
 
-            <dl className="mt-16 grid grid-cols-2 gap-px overflow-hidden rounded-[22px] border border-[var(--line)] bg-[var(--line)] md:grid-cols-4">
+            <dl className="mt-16 grid grid-cols-2 gap-px overflow-hidden rounded-[24px] border border-[var(--line)] bg-[var(--line)] shadow-[var(--lift)] md:grid-cols-4">
               {highlights.map((h) => (
                 <div key={h.label} className="bg-[rgba(10,10,11,0.93)] px-5 py-5 md:px-6">
                   <dd className="text-[28px] font-semibold leading-none tracking-[-0.025em] text-[var(--ink)]">{h.value}</dd>
@@ -298,29 +355,10 @@ export default function App() {
             </Row>
 
             <h3 className="mb-2 mt-20 text-[28px] font-semibold tracking-[-0.02em]">Awards</h3>
-            <Row when="Sep 2024" where="Kuala Lumpur">
+            <Row when="Sep 2024" where="Kuala Lumpur" wide={<Gallery />}>
               <h4 className="text-[21px] font-semibold leading-[1.3] tracking-[-0.015em]">1st Place, DEVMatch Hackathon</h4>
               <p className="mt-1 text-[17px] text-[var(--ink-2)]">MasChain Tourism Track</p>
               <p className="mt-3 text-[17px] leading-[1.47]">Built the UI for DocTour, a blockchain medical tourism app.</p>
-              {/* Proof: the winners' screen at the awards (opens full size) */}
-              <div className="mt-6 grid grid-cols-2 gap-2 md:grid-cols-[1.78fr_1fr_1fr] md:gap-3">
-                {[
-                  { src: devmatchTeam, alt: 'The DocTour team on stage under the “MasChain Tourism 1st – 1000 USD DocTour” winners screen', wide: true },
-                  { src: devmatchStage, alt: 'Team photo beside the APUBCC banner after winning the MasChain Tourism track' },
-                  { src: devmatchSelfie, alt: 'Selfie with the team in front of the DocTour winners screen' },
-                ].map((ph) => (
-                  <a
-                    key={ph.src}
-                    href={ph.src}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`press block overflow-hidden rounded-[18px] ${ph.wide ? 'col-span-2 aspect-[4/3] md:col-span-1 md:aspect-auto' : 'aspect-[3/4]'}`}
-                  >
-                    <img src={ph.src} alt={ph.alt} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 hover:scale-[1.03]" />
-                  </a>
-                ))}
-              </div>
-              <p className="mt-2 text-[13px] text-[var(--ink-3)]">Awards night, MasChain Tourism Track · tap a photo to view it full size</p>
             </Row>
             <Row when="Nov 2023" where="Kuala Lumpur">
               <h4 className="text-[21px] font-semibold leading-[1.3] tracking-[-0.015em]">2nd Place, APU Entrepreneurship</h4>
@@ -380,7 +418,7 @@ export default function App() {
                     href={c.href}
                     target={c.external ? '_blank' : undefined}
                     rel={c.external ? 'noopener noreferrer' : undefined}
-                    className="tile press group rounded-[22px] p-6"
+                    className="tile press group rounded-[24px] p-6"
                   >
                     <c.icon className="h-5 w-5 text-[var(--ink-2)]" />
                     <p className="mt-4 text-[15px] text-[var(--ink-2)]">{c.label}</p>

@@ -63,7 +63,7 @@ export default function SkillsSection() {
 
       <div className="grid gap-4 md:grid-cols-2 md:gap-5">
         {categories.map((c) => (
-          <Reveal key={c.title} className="tile rounded-[22px] p-6">
+          <Reveal key={c.title} className="tile rounded-[24px] p-6">
             <h3 className="text-[17px] font-semibold">{c.title}</h3>
             <TechChips className="mt-4" items={c.skills} />
           </Reveal>
@@ -72,7 +72,7 @@ export default function SkillsSection() {
 
       <Reveal className="mt-4 grid grid-cols-2 gap-4 md:mt-5 md:grid-cols-4 md:gap-5">
         {spokenLanguages.map((l) => (
-          <div key={l.name} className="tile flex items-center gap-4 rounded-[22px] p-5">
+          <div key={l.name} className="tile flex items-center gap-4 rounded-[20px] p-5">
             <span className="block h-7 w-10 shrink-0 overflow-hidden rounded-[5px] ring-1 ring-white/15 [&>svg]:h-full [&>svg]:w-full">
               {flags[l.name]}
             </span>
