@@ -1,6 +1,8 @@
 import Reveal from './Reveal';
 import TechChips from './TechChips';
+import type { Copy } from '../i18n';
 
+// Titles come from i18n.ts, same order.
 const categories = [
   { title: 'Languages', skills: ['TypeScript', 'Python', 'C', 'C++', 'C#', 'PHP', 'Dart'] },
   { title: 'Frameworks', skills: ['Angular', 'React', 'Next.js', 'Ionic', 'Flutter', '.NET'] },
@@ -46,35 +48,30 @@ const flags: Record<string, React.ReactNode> = {
   ),
 };
 
-const spokenLanguages = [
-  { name: 'Indonesian', level: 'Native' },
-  { name: 'English', level: 'Fluent · IELTS 6.5' },
-  { name: 'Malay', level: 'Fluent' },
-  { name: 'German', level: 'B2' },
-];
+const flagOrder = ['Indonesian', 'English', 'Malay', 'German'];
 
-export default function SkillsSection() {
+export default function SkillsSection({ c }: { c: Copy['skills'] }) {
   return (
     <>
       <Reveal className="mb-12 md:mb-16">
-        <h2 className="text-[clamp(2.25rem,5vw,3.5rem)] font-semibold leading-[1.07] tracking-[-0.025em]">Skills.</h2>
-        <p className="mt-4 max-w-2xl text-[19px] leading-[1.42] text-[var(--ink-2)]">The tools behind the projects above.</p>
+        <h2 className="text-[clamp(2.25rem,5vw,3.5rem)] font-semibold leading-[1.07] tracking-[-0.025em]">{c.title}</h2>
+        <p className="mt-4 max-w-2xl text-[19px] leading-[1.42] text-[var(--ink-2)]">{c.lede}</p>
       </Reveal>
 
       <div className="grid gap-4 md:grid-cols-2 md:gap-5">
-        {categories.map((c) => (
-          <Reveal key={c.title} className="tile rounded-[24px] p-6">
-            <h3 className="text-[17px] font-semibold">{c.title}</h3>
-            <TechChips className="mt-4" items={c.skills} />
+        {categories.map((cat, i) => (
+          <Reveal key={cat.title} className="tile rounded-[24px] p-6">
+            <h3 className="text-[17px] font-semibold">{c.categories[i]}</h3>
+            <TechChips className="mt-4" items={cat.skills} />
           </Reveal>
         ))}
       </div>
 
       <Reveal className="mt-4 grid grid-cols-2 gap-4 md:mt-5 md:grid-cols-4 md:gap-5">
-        {spokenLanguages.map((l) => (
-          <div key={l.name} className="tile flex items-center gap-4 rounded-[20px] p-5">
+        {c.spoken.map((l, i) => (
+          <div key={flagOrder[i]} className="tile flex items-center gap-4 rounded-[20px] p-5">
             <span className="block h-7 w-10 shrink-0 overflow-hidden rounded-[5px] ring-1 ring-white/15 [&>svg]:h-full [&>svg]:w-full">
-              {flags[l.name]}
+              {flags[flagOrder[i]]}
             </span>
             <div className="min-w-0">
               <p className="text-[17px] font-semibold tracking-[-0.01em]">{l.name}</p>

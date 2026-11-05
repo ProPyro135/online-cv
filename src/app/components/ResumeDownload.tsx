@@ -2,10 +2,10 @@ import { FileDown } from 'lucide-react';
 import resumeEn from '../../imports/Alfeus_Xiesi_Delroy_-_Resume.pdf';
 import resumeId from '../../imports/Alfeus_Xiesi_Delroy_-_Resume_ID.pdf';
 
-export type Lang = 'en' | 'id';
+import type { Copy, Lang } from '../i18n';
 
 // SVG, not emoji: Windows renders flag emoji as plain letters.
-const flags: Record<Lang, React.ReactNode> = {
+export const flags: Record<Lang, React.ReactNode> = {
   en: (
     <svg viewBox="0 0 60 30" preserveAspectRatio="xMidYMid slice" className="h-full w-full">
       <path d="M0 0h60v30H0z" fill="#012169" />
@@ -28,7 +28,7 @@ const options: { lang: Lang; label: string; file: string; name: string }[] = [
   { lang: 'id', label: 'Bahasa Indonesia', file: resumeId, name: 'Alfeus_Xiesi_Delroy_Resume_ID.pdf' },
 ];
 
-export default function ResumeDownload({ lang, onLang }: { lang: Lang; onLang: (l: Lang) => void }) {
+export default function ResumeDownload({ lang, onLang, c }: { lang: Lang; onLang: (l: Lang) => void; c: Copy }) {
   const current = options.find((o) => o.lang === lang)!;
   return (
     <div className="inline-flex items-center gap-3">
@@ -38,9 +38,9 @@ export default function ResumeDownload({ lang, onLang }: { lang: Lang; onLang: (
         className="press inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-5 py-2.5 text-[15px] font-medium text-white hover:bg-[var(--accent-hover)]"
       >
         <FileDown className="h-4 w-4" />
-        Download résumé
+        {c.download}
       </a>
-      <div role="radiogroup" aria-label="Résumé language" className="inline-flex rounded-full bg-white/[0.08] p-1">
+      <div role="radiogroup" aria-label={c.resumeLangAria} className="inline-flex rounded-full bg-white/[0.08] p-1">
         {options.map((o) => (
           <button
             key={o.lang}

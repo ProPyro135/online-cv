@@ -4,6 +4,7 @@
 // Any wheel, touch, key or click (or the Stop button) ends it and hands the page back.
 
 import { CREW, HELPERS, type Member } from './crew';
+import { COPY } from './i18n';
 
 type Kind = 'box' | 'text';
 // top/bottom are document coordinates (the layout doesn't move while the movie runs).
@@ -145,10 +146,11 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
       requestAnimationFrame(step);
     });
 
+  const tx = COPY[document.documentElement.lang === 'id' ? 'id' : 'en'];
   const layer = document.createElement('div');
   layer.className = 'sb-layer';
   layer.innerHTML =
-    '<div class="sb-bar"></div><div class="sb-stop" role="status"><span>Building <b>About</b></span><span class="sb-meter"><i></i></span><span class="sb-pct">0%</span><button type="button" aria-label="Stop the build animation"><svg width="9" height="9"><rect width="9" height="9" rx="1.5" fill="currentColor"/></svg>Stop</button></div>';
+    `<div class="sb-bar"></div><div class="sb-stop" role="status"><span>${tx.building} <b>${tx.nav.about}</b></span><span class="sb-meter"><i></i></span><span class="sb-pct">0%</span><button type="button" aria-label="${tx.stopAria}"><svg width="9" height="9"><rect width="9" height="9" rx="1.5" fill="currentColor"/></svg>${tx.stop}</button></div>`;
   document.body.appendChild(layer);
   for (const t of tasks) {
     t.el.setAttribute(HIDE, '');
@@ -168,7 +170,7 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
       const r = s.getBoundingClientRect();
       return r.top <= innerHeight * 0.6 && r.bottom > innerHeight * 0.4;
     });
-    if (mid) label.textContent = mid.id[0].toUpperCase() + mid.id.slice(1);
+    if (mid) label.textContent = tx.nav[mid.id as keyof typeof tx.nav] ?? mid.id;
     requestAnimationFrame(meter);
   };
   requestAnimationFrame(meter);
@@ -471,7 +473,7 @@ export function toggleSwarmBuild(onRunningChange: (running: boolean) => void) {
     while (alive && pos < maxY() - 1) await sleep(100); // finish the glide to the bottom
     if (!alive) return;
     built = total;
-    label.textContent = 'Done';
+    label.textContent = tx.done;
     await sleep(500);
     // Everyone leaves the way they came, then the real page takes over.
     cursors.forEach(unpark);

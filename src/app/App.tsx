@@ -10,7 +10,9 @@ import { toggleSwarmBuild } from './swarmBuild';
 import devmatchTeam from '../imports/devmatch-team.jpg';
 import devmatchStage from '../imports/devmatch-stage.jpg';
 import devmatchSelfie from '../imports/devmatch-selfie.jpg';
-import ResumeDownload, { type Lang } from './components/ResumeDownload';
+import ResumeDownload from './components/ResumeDownload';
+import LangSwitch from './components/LangSwitch';
+import { COPY, initialLang, type Lang } from './i18n';
 
 function SectionHead({ title, lede }: { title: string; lede?: string }) {
   return (
@@ -36,30 +38,26 @@ function Row({ when, where, children, wide }: { when: string; where?: string; ch
   );
 }
 
-const devmatchPhotos = [
-  { src: devmatchTeam, alt: 'The DocTour team on stage under the “MasChain Tourism 1st – 1000 USD DocTour” winners screen', wide: true },
-  { src: devmatchStage, alt: 'Team photo beside the APUBCC banner after winning the MasChain Tourism track' },
-  { src: devmatchSelfie, alt: 'Selfie with the team in front of the DocTour winners screen' },
-];
+const devmatchPhotos = [{ src: devmatchTeam, wide: true }, { src: devmatchStage }, { src: devmatchSelfie }];
 
 /** Hackathon photos. Desktop: one row at full width, every photo uncropped and the same height
  *  (flex-grow = aspect ratio). Phones: the wide one on top, two portraits below. Tap opens a lightbox. */
-function Gallery() {
-  const [open, setOpen] = useState<(typeof devmatchPhotos)[number] | null>(null);
+function Gallery({ alts, caption }: { alts: string[]; caption: string }) {
+  const [open, setOpen] = useState<number | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
-    if (open) dialog.current?.showModal();
+    if (open !== null) dialog.current?.showModal();
   }, [open]);
   return (
     <>
       <div className="mt-8 grid grid-cols-2 gap-2 md:mt-10 md:flex md:gap-3">
-        {devmatchPhotos.map((ph) => (
+        {devmatchPhotos.map((ph, i) => (
           <a
             key={ph.src}
             href={ph.src}
             onClick={(e) => {
               e.preventDefault();
-              setOpen(ph);
+              setOpen(i);
             }}
             style={{ flex: `${ph.wide ? 4 / 3 : 3 / 4} 1 0` }}
             className={`press group relative block min-w-0 overflow-hidden rounded-[20px] shadow-[0_1px_2px_rgba(0,0,0,0.5),0_12px_32px_-8px_rgba(0,0,0,0.6)] after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:ring-1 after:ring-inset after:ring-white/10 ${
@@ -68,15 +66,15 @@ function Gallery() {
           >
             <img
               src={ph.src}
-              alt={ph.alt}
+              alt={alts[i]}
               loading="lazy"
               className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
             />
           </a>
         ))}
       </div>
-      <p className="mt-3 text-[13px] text-[var(--ink-3)]">Awards night, MasChain Tourism Track · tap a photo to enlarge</p>
-      {open && (
+      <p className="mt-3 text-[13px] text-[var(--ink-3)]">{caption}</p>
+      {open !== null && (
         <dialog
           ref={dialog}
           data-swarm-skip
@@ -84,80 +82,29 @@ function Gallery() {
           onClick={() => dialog.current?.close()}
           className="lightbox m-auto cursor-zoom-out bg-transparent p-0 outline-none"
         >
-          <img src={open.src} alt={open.alt} className="max-h-[88vh] max-w-[92vw] rounded-[20px] shadow-[0_24px_80px_rgba(0,0,0,0.7)]" />
+          <img src={devmatchPhotos[open].src} alt={alts[open]} className="max-h-[88vh] max-w-[92vw] rounded-[20px] shadow-[0_24px_80px_rgba(0,0,0,0.7)]" />
         </dialog>
       )}
     </>
   );
 }
 
-const navigation = [
-  { name: 'About', href: '#about' },
-  { name: 'Education', href: '#education' },
-  { name: 'Experience', href: '#experience' },
-  { name: 'Projects', href: '#projects' },
-  { name: 'Skills', href: '#skills' },
-  { name: 'Contact', href: '#contact' },
-];
+const navigation = ['about', 'education', 'experience', 'projects', 'skills', 'contact'] as const;
 
+// Non-text project data; the words are in i18n.ts (same order).
 const projects = [
-  {
-    title: 'Ivision Chatbot',
-    accent: '#30d158',
-    subtitle: 'WhatsApp chatbot that answers from each business’s own catalogue and prices.',
-    date: '2026 – Present',
-    tech: ['TypeScript', 'Next.js', 'Fastify', 'PostgreSQL', 'Redis', 'Supabase', 'Docker', 'WhatsApp'],
-    points: ['Multi-tenant, isolated with PostgreSQL row-level security', 'Encrypted credentials (AES-256-GCM), HMAC-verified messages'],
-    repo: 'ProPyro135/Ivision-Chatbot',
-  },
-  {
-    title: 'One Screener',
-    accent: '#ffd60a',
-    subtitle: 'Screens IDX stocks, forex and gold against your own criteria.',
-    date: '2026 – Present',
-    tech: ['Python', 'Streamlit'],
-    points: ['Historical market data with integrity checks'],
-  },
-  {
-    title: 'Propertus',
-    accent: '#2997ff',
-    subtitle: 'Property management platform with four role-based dashboards.',
-    date: 'Oct 2025',
-    tech: ['React', 'TypeScript', '.NET', 'MySQL', 'AWS', 'Stripe', 'Vercel'],
-    points: ['Stripe Connect rent payments and payouts', 'JWT + 2FA, deployed on AWS'],
-    repo: 'sqd2/Property-Management-System-AWS',
-  },
-  {
-    title: 'Geofence Patrol Verification',
-    accent: '#ff9f0a',
-    subtitle: 'Final Year Project: a GPS app that proves guards walked their route.',
-    date: 'Jan 2026',
-    tech: ['Ionic', 'Angular', 'Capacitor', 'Supabase'],
-    points: ['Hash-verified, tamper-proof patrol reports', 'Offline-first with live monitoring'],
-    repo: 'ProPyro135/GSM',
-  },
-  {
-    title: 'Orb',
-    accent: '#bf5af2',
-    subtitle: 'A 3D globe you steer with hand gestures.',
-    date: '2026',
-    tech: ['TypeScript', 'Three.js', 'MediaPipe', 'Vite'],
-    points: ['Webcam, Ultraleap or mouse, with automatic fallback'],
-    repo: 'ProPyro135/Ivision-3d-Hand-track',
-  },
+  { title: 'Ivision Chatbot', accent: '#30d158', tech: ['TypeScript', 'Next.js', 'Fastify', 'PostgreSQL', 'Redis', 'Supabase', 'Docker', 'WhatsApp'], repo: 'ProPyro135/Ivision-Chatbot' },
+  { title: 'One Screener', accent: '#ffd60a', tech: ['Python', 'Streamlit'] },
+  { title: 'Propertus', accent: '#2997ff', tech: ['React', 'TypeScript', '.NET', 'MySQL', 'AWS', 'Stripe', 'Vercel'], repo: 'sqd2/Property-Management-System-AWS' },
+  { title: 'Geofence Patrol Verification', accent: '#ff9f0a', tech: ['Ionic', 'Angular', 'Capacitor', 'Supabase'], repo: 'ProPyro135/GSM' },
+  { title: 'Orb', accent: '#bf5af2', tech: ['TypeScript', 'Three.js', 'MediaPipe', 'Vite'], repo: 'ProPyro135/Ivision-3d-Hand-track' },
 ];
 
-const highlights = [
-  { value: '1st', label: 'DEVMatch Hackathon 2024' },
-  { value: '5', label: 'Projects built' },
-  { value: '3.03', label: 'CGPA, dual degree UK × MY' },
-  { value: '4', label: 'Spoken languages' },
-];
 
 const contactLinks = [
-  { href: 'mailto:dalfeusxiesi@gmail.com', icon: Mail, label: 'Email', value: 'dalfeusxiesi@gmail.com' },
-  { href: 'tel:+628811232486', icon: Phone, label: 'Phone', value: '+62 881 1232 486' },
-  { href: 'https://www.linkedin.com/in/alfeus-xiesi-delroy', icon: Linkedin, label: 'LinkedIn', value: 'alfeus-xiesi-delroy', external: true },
+  { href: 'mailto:dalfeusxiesi@gmail.com', icon: Mail, key: 'email', value: 'dalfeusxiesi@gmail.com' },
+  { href: 'tel:+628811232486', icon: Phone, key: 'phone', value: '+62 881 1232 486' },
+  { href: 'https://www.linkedin.com/in/alfeus-xiesi-delroy', icon: Linkedin, key: 'linkedin', value: 'alfeus-xiesi-delroy', external: true },
 ];
 
 const btnSecondary =
@@ -168,13 +115,24 @@ export default function App() {
   const [activeSection, setActiveSection] = useState('about');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isBuilding, setIsBuilding] = useState(false);
-  const [lang, setLang] = useState<Lang>('en');
+  // Site language (EN/ID). The résumé picker follows it but can still be switched on its own.
+  const [lang, setLang] = useState<Lang>(initialLang);
+  const [resumeLang, setResumeLang] = useState<Lang>(lang);
+  const c = COPY[lang];
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    document.title = lang === 'id' ? 'Alfeus Xiesi Delroy | CV Online' : 'Alfeus Xiesi Delroy | Online CV';
+    setResumeLang(lang);
+    // Shareable link: ?lang=id
+    const u = new URL(location.href);
+    if (lang === 'en') u.searchParams.delete('lang');
+    else u.searchParams.set('lang', lang);
+    history.replaceState(null, '', u);
+  }, [lang]);
 
   useEffect(() => {
     const onScroll = () => {
-      const current = navigation
-        .map((n) => n.href.slice(1))
-        .find((id) => {
+      const current = navigation.find((id) => {
           const r = document.getElementById(id)?.getBoundingClientRect();
           return r && r.top <= 120 && r.bottom >= 120;
         });
@@ -223,24 +181,34 @@ export default function App() {
         {/* Translucent nav: content scrolls underneath it */}
         <nav data-swarm-skip className="glass fixed inset-x-0 top-0 z-50">
           <div className="mx-auto flex h-12 max-w-[1024px] items-center justify-between px-4 md:px-6">
-            <button onClick={() => go('#about')} className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--ink)]">
+            <button onClick={() => go('#about')} className="min-w-0 truncate whitespace-nowrap text-[15px] font-semibold tracking-[-0.01em] text-[var(--ink)]">
               Alfeus Xiesi Delroy
             </button>
 
             <div className="flex items-center gap-1">
               <div className="hidden items-center md:flex">
-                {navigation.slice(1).map((item) => (
+                {navigation.slice(1).map((id) => (
                   <button
-                    key={item.name}
-                    onClick={() => go(item.href)}
+                    key={id}
+                    onClick={() => go(`#${id}`)}
                     className={`px-3 py-1 text-[13px] transition-colors ${
-                      activeSection === item.href.slice(1) ? 'text-[var(--ink)]' : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
+                      activeSection === id ? 'text-[var(--ink)]' : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
                     }`}
                   >
-                    {item.name}
+                    {c.nav[id]}
                   </button>
                 ))}
               </div>
+
+              <LangSwitch
+                lang={lang}
+                onLang={(l) => {
+                  // Text is about to change under the cursors: end the movie first.
+                  if (isBuilding) toggleSwarmBuild(setIsBuilding);
+                  setLang(l);
+                }}
+                label={c.siteLangAria}
+              />
 
               <button
                 type="button"
@@ -249,19 +217,19 @@ export default function App() {
                   toggleSwarmBuild(setIsBuilding);
                 }}
                 className="press motion-reduce:hidden ml-2 inline-flex items-center gap-1.5 rounded-full bg-white/[0.08] px-3 py-1 text-[13px] text-[var(--ink)] hover:bg-white/[0.14]"
-                aria-label={isBuilding ? 'Stop the build animation' : 'Replay the build animation'}
+                aria-label={isBuilding ? c.stopAria : c.replayAria}
               >
                 {isBuilding ? <X className="h-3.5 w-3.5" /> : <MousePointer2 className="h-3.5 w-3.5" />}
                 {/* Keyed element, not a bare text swap: Chrome's auto-translate replaces text nodes, and React
                     editing a replaced node crashed the whole page (blank screen) when the movie ended. */}
-                <span key={isBuilding ? 'stop' : 'replay'}>{isBuilding ? 'Stop' : 'Replay build'}</span>
+                <span key={`${isBuilding}-${lang}`} className="hidden sm:inline">{isBuilding ? c.stop : c.replay}</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setIsMobileNavOpen((o) => !o)}
                 className="p-2 text-[var(--ink-2)] md:hidden"
-                aria-label="Toggle navigation menu"
+                aria-label={c.menuAria}
                 aria-expanded={isMobileNavOpen}
               >
                 {isMobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -271,15 +239,15 @@ export default function App() {
 
           {isMobileNavOpen && (
             <div className="border-t border-[var(--line)] px-4 pb-3 md:hidden">
-              {navigation.map((item) => (
+              {navigation.map((id) => (
                 <button
-                  key={item.name}
-                  onClick={() => go(item.href)}
+                  key={id}
+                  onClick={() => go(`#${id}`)}
                   className={`block w-full border-b border-[var(--line)] py-3 text-left text-[17px] last:border-0 ${
-                    activeSection === item.href.slice(1) ? 'text-[var(--ink)]' : 'text-[var(--ink-2)]'
+                    activeSection === id ? 'text-[var(--ink)]' : 'text-[var(--ink-2)]'
                   }`}
                 >
-                  {item.name}
+                  {c.nav[id]}
                 </button>
               ))}
             </div>
@@ -291,20 +259,23 @@ export default function App() {
           <section id="about" className="flex min-h-[100svh] flex-col justify-center pb-16 pt-24">
             <div className="flex flex-col-reverse gap-10 md:flex-row md:items-end md:justify-between">
               <div className="max-w-[620px]">
-                <p className="text-[19px] font-medium text-[var(--ink-2)]">Computer Science Graduate · Full Stack Developer</p>
+                <p className="text-[19px] font-medium text-[var(--ink-2)]">{c.role}</p>
                 <h1 className="mt-3 text-[clamp(3rem,9vw,5.75rem)] font-semibold leading-[1.02] tracking-[-0.035em] text-[var(--ink)]">
                   Alfeus Xiesi Delroy
                 </h1>
                 <p className="mt-6 text-[21px] leading-[1.38] tracking-[-0.01em] text-[var(--ink-2)]">
-                  I build <span className="text-[var(--ink)]">offline-first mobile apps</span> and{' '}
-                  <span className="text-[var(--ink)]">full-stack platforms</span>.
+                  {c.tagline[0]}
+                  <span className="whitespace-nowrap text-[var(--ink)]">{c.tagline[1]}</span>
+                  {c.tagline[2]}
+                  <span className="whitespace-nowrap text-[var(--ink)]">{c.tagline[3]}</span>
+                  {c.tagline[4]}
                 </p>
 
                 <div className="mt-9 flex flex-wrap items-center gap-3">
-                  <ResumeDownload lang={lang} onLang={setLang} />
+                  <ResumeDownload lang={resumeLang} onLang={setResumeLang} c={c} />
                   <a href="mailto:dalfeusxiesi@gmail.com" className={btnSecondary}>
                     <Mail className="h-4 w-4" />
-                    Email me
+                    {c.emailMe}
                   </a>
                 </div>
                 <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-[15px]">
@@ -321,7 +292,7 @@ export default function App() {
             </div>
 
             <dl className="mt-16 grid grid-cols-2 gap-px overflow-hidden rounded-[24px] border border-[var(--line)] bg-[var(--line)] shadow-[var(--lift)] md:grid-cols-4">
-              {highlights.map((h) => (
+              {c.highlights.map((h) => (
                 <div key={h.label} className="bg-[rgba(10,10,11,0.93)] px-5 py-5 md:px-6">
                   <dd className="text-[28px] font-semibold leading-none tracking-[-0.025em] text-[var(--ink)]">{h.value}</dd>
                   <dt className="mt-2 text-[15px] leading-[1.35] text-[var(--ink-2)]">{h.label}</dt>
@@ -331,17 +302,17 @@ export default function App() {
           </section>
 
           <section id="education" className="scroll-mt-12 py-20 md:py-24">
-            <SectionHead title="Education." lede="A dual degree between Malaysia and the United Kingdom." />
-            <Row when="Mar 2023 – Feb 2026" where="Kuala Lumpur, Malaysia">
+            <SectionHead title={c.education.title} lede={c.education.lede} />
+            <Row when={c.education.when} where={c.education.where}>
               <h3 className="text-[21px] font-semibold leading-[1.3] tracking-[-0.015em]">Asia Pacific University of Technology & Innovation</h3>
-              <p className="mt-1 text-[17px] text-[var(--ink-2)]">BSc (Hons) Computer Science · Dual degree with De Montfort University, Leicester, UK</p>
+              <p className="mt-1 text-[17px] text-[var(--ink-2)]">{c.education.degree}</p>
               <dl className="mt-6 flex flex-wrap gap-x-12 gap-y-4">
                 <div>
-                  <dt className="text-[15px] text-[var(--ink-2)]">CGPA</dt>
+                  <dt className="text-[15px] text-[var(--ink-2)]">{c.education.gpa}</dt>
                   <dd className="text-[28px] font-semibold tracking-[-0.02em]">3.03</dd>
                 </div>
                 <div>
-                  <dt className="text-[15px] text-[var(--ink-2)]">Classification</dt>
+                  <dt className="text-[15px] text-[var(--ink-2)]">{c.education.classification}</dt>
                   <dd className="text-[28px] font-semibold tracking-[-0.02em]">Second Class Honours, First Division</dd>
                 </div>
               </dl>
@@ -349,46 +320,48 @@ export default function App() {
           </section>
 
           <section id="experience" className="scroll-mt-12 py-20 md:py-24">
-            <SectionHead title="Experience." lede="Where the offline-first work started." />
-            <Row when="Dec 2024 – May 2025" where="Internship">
-              <h3 className="text-[21px] font-semibold leading-[1.3] tracking-[-0.015em]">Web Developer Intern</h3>
+            <SectionHead title={c.experience.title} lede={c.experience.lede} />
+            <Row when={c.experience.when} where={c.experience.where}>
+              <h3 className="text-[21px] font-semibold leading-[1.3] tracking-[-0.015em]">{c.experience.role}</h3>
               <p className="mt-1 text-[17px] text-[var(--ink-2)]">PT Setrakarya Manunggal (Karyamas Plantation Group)</p>
               <ul className="mt-5 list-disc space-y-1.5 pl-5 text-[17px] leading-[1.47] marker:text-[var(--ink-3)]">
-                <li>Trip Monitoring app for plantation vehicle logs</li>
-                <li>Works offline, syncs automatically</li>
-                <li>Backend for master data, tariffs and reports</li>
+                {c.experience.points.map((pt) => (
+                  <li key={pt}>{pt}</li>
+                ))}
               </ul>
               <TechChips className="mt-5" items={['Angular', 'Ionic', 'SQLite', 'PHP', 'MySQL', 'REST API']} />
             </Row>
 
-            <h3 className="mb-2 mt-16 text-[28px] font-semibold tracking-[-0.02em]">Awards</h3>
-            <Row when="Sep 2024" where="Kuala Lumpur" wide={<Gallery />}>
-              <h4 className="text-[21px] font-semibold leading-[1.3] tracking-[-0.015em]">1st Place, DEVMatch Hackathon</h4>
+            <h3 className="mb-2 mt-16 text-[28px] font-semibold tracking-[-0.02em]">{c.awards.title}</h3>
+            <Row when="Sep 2024" where="Kuala Lumpur" wide={<Gallery alts={c.awards.alts} caption={c.awards.caption} />}>
+              <h4 className="text-[21px] font-semibold leading-[1.3] tracking-[-0.015em]">{c.awards.first}</h4>
               <p className="mt-1 text-[17px] text-[var(--ink-2)]">MasChain Tourism Track</p>
-              <p className="mt-3 text-[17px] leading-[1.47]">Built the UI for DocTour, a blockchain medical tourism app.</p>
+              <p className="mt-3 text-[17px] leading-[1.47]">{c.awards.firstText}</p>
             </Row>
             <Row when="Nov 2023" where="Kuala Lumpur">
-              <h4 className="text-[21px] font-semibold leading-[1.3] tracking-[-0.015em]">2nd Place, APU Entrepreneurship</h4>
+              <h4 className="text-[21px] font-semibold leading-[1.3] tracking-[-0.015em]">{c.awards.second}</h4>
               <p className="mt-1 text-[17px] text-[var(--ink-2)]">Pitch Presenter & Concept Developer</p>
-              <p className="mt-3 text-[17px] leading-[1.47]">Pitched a walking app that rewards distance travelled.</p>
+              <p className="mt-3 text-[17px] leading-[1.47]">{c.awards.secondText}</p>
             </Row>
           </section>
 
           <section id="projects" className="scroll-mt-12 py-20 md:py-24">
-            <SectionHead title="Projects." lede="Things I've built and shipped, from client platforms to experiments." />
+            <SectionHead title={c.projects.title} lede={c.projects.lede} />
             <div className="grid gap-4 md:grid-cols-2 md:gap-5">
-              {projects.map((p, i) => (
+              {projects.map((p, i) => {
+                const t = c.projects.items[i];
+                return (
                 <Reveal key={p.title} className={`h-full ${i === 0 ? 'md:col-span-2' : ''}`}>
                 <article className="tile relative flex h-full flex-col overflow-hidden rounded-[28px] p-7 md:p-9" style={{ '--hue': p.accent } as React.CSSProperties}>
                   <div aria-hidden className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full bg-[var(--hue)] opacity-[0.16] blur-[70px]" />
                   <p className="relative flex items-center gap-2 text-[15px] text-[var(--ink-2)]">
                     <span className="h-2 w-2 rounded-full bg-[var(--hue)]" />
-                    {p.date}
+                    {t.date}
                   </p>
                   <h3 className="relative mt-2 text-[28px] font-semibold leading-[1.14] tracking-[-0.02em]">{p.title}</h3>
-                  <p className="mt-2 text-[17px] leading-[1.42] text-[var(--ink-2)]">{p.subtitle}</p>
+                  <p className="mt-2 text-[17px] leading-[1.42] text-[var(--ink-2)]">{t.subtitle}</p>
                   <ul className="mt-4 space-y-1.5 text-[15px] leading-[1.45]">
-                    {p.points.map((pt) => (
+                    {t.points.map((pt) => (
                       <li key={pt} className="flex gap-2">
                         <span aria-hidden className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--hue)]" />
                         {pt}
@@ -400,36 +373,37 @@ export default function App() {
                     {p.repo && (
                       <a href={`https://github.com/${p.repo}`} target="_blank" rel="noopener noreferrer" className={`${link} mt-3 text-[15px]`}>
                         <Github className="mr-1.5 h-4 w-4" />
-                        View on GitHub <ChevronRight className="h-4 w-4" />
+                        {c.projects.github} <ChevronRight className="h-4 w-4" />
                       </a>
                     )}
                   </div>
                 </article>
                 </Reveal>
-              ))}
+                );
+              })}
             </div>
           </section>
 
           <section id="skills" className="scroll-mt-12 py-20 md:py-24">
-            <SkillsSection />
+            <SkillsSection c={c.skills} />
           </section>
 
           <section id="contact" className="scroll-mt-12 py-20 md:py-24">
-            <SectionHead title="Let's talk." lede="Open to graduate and junior developer roles across frontend, backend, cloud and AI-powered systems." />
+            <SectionHead title={c.contact.title} lede={c.contact.lede} />
             <Reveal>
-              <ResumeDownload lang={lang} onLang={setLang} />
+              <ResumeDownload lang={resumeLang} onLang={setResumeLang} c={c} />
               <div className="mt-12 grid gap-4 md:grid-cols-3">
-                {contactLinks.map((c) => (
+                {contactLinks.map((l) => (
                   <a
-                    key={c.label}
-                    href={c.href}
-                    target={c.external ? '_blank' : undefined}
-                    rel={c.external ? 'noopener noreferrer' : undefined}
+                    key={l.key}
+                    href={l.href}
+                    target={l.external ? '_blank' : undefined}
+                    rel={l.external ? 'noopener noreferrer' : undefined}
                     className="tile press group rounded-[24px] p-6"
                   >
-                    <c.icon className="h-5 w-5 text-[var(--ink-2)]" />
-                    <p className="mt-4 text-[15px] text-[var(--ink-2)]">{c.label}</p>
-                    <p className="mt-0.5 truncate text-[17px] text-[var(--ink)] group-hover:text-[var(--link)]">{c.value}</p>
+                    <l.icon className="h-5 w-5 text-[var(--ink-2)]" />
+                    <p className="mt-4 text-[15px] text-[var(--ink-2)]">{l.key === 'linkedin' ? 'LinkedIn' : c.contact[l.key as 'email' | 'phone']}</p>
+                    <p className="mt-0.5 truncate text-[17px] text-[var(--ink)] group-hover:text-[var(--link)]">{l.value}</p>
                   </a>
                 ))}
               </div>
@@ -438,7 +412,7 @@ export default function App() {
         </main>
 
         <footer className="relative mx-auto max-w-[1024px] border-t border-[var(--line)] px-4 py-8 text-[13px] text-[var(--ink-3)] md:px-6">
-          © 2026 Alfeus Xiesi Delroy. Built with React, TypeScript and Motion.
+          {c.footer}
         </footer>
       </div>
     </MotionConfig>
