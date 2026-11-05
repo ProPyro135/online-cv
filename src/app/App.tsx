@@ -187,6 +187,13 @@ export default function App() {
   // The cursor build is the page's entrance: play it once fonts have laid out, unless the visitor asked for less motion.
   useEffect(() => {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    // Full movie on the first visit only; returning visitors get the page at once ("Replay build" is in the nav).
+    try {
+      if (localStorage.getItem('cv-seen-build')) return;
+      localStorage.setItem('cv-seen-build', '1');
+    } catch {
+      /* storage blocked: just play it */
+    }
     // The movie always starts at the top, not wherever the browser restored the scroll to.
     history.scrollRestoration = 'manual';
     scrollTo(0, 0);
@@ -323,7 +330,7 @@ export default function App() {
             </dl>
           </section>
 
-          <section id="education" className="scroll-mt-12 py-24 md:py-32">
+          <section id="education" className="scroll-mt-12 py-20 md:py-24">
             <SectionHead title="Education." lede="A dual degree between Malaysia and the United Kingdom." />
             <Row when="Mar 2023 – Feb 2026" where="Kuala Lumpur, Malaysia">
               <h3 className="text-[21px] font-semibold leading-[1.3] tracking-[-0.015em]">Asia Pacific University of Technology & Innovation</h3>
@@ -341,7 +348,7 @@ export default function App() {
             </Row>
           </section>
 
-          <section id="experience" className="scroll-mt-12 py-24 md:py-32">
+          <section id="experience" className="scroll-mt-12 py-20 md:py-24">
             <SectionHead title="Experience." lede="Where the offline-first work started." />
             <Row when="Dec 2024 – May 2025" where="Internship">
               <h3 className="text-[21px] font-semibold leading-[1.3] tracking-[-0.015em]">Web Developer Intern</h3>
@@ -354,7 +361,7 @@ export default function App() {
               <TechChips className="mt-5" items={['Angular', 'Ionic', 'SQLite', 'PHP', 'MySQL', 'REST API']} />
             </Row>
 
-            <h3 className="mb-2 mt-20 text-[28px] font-semibold tracking-[-0.02em]">Awards</h3>
+            <h3 className="mb-2 mt-16 text-[28px] font-semibold tracking-[-0.02em]">Awards</h3>
             <Row when="Sep 2024" where="Kuala Lumpur" wide={<Gallery />}>
               <h4 className="text-[21px] font-semibold leading-[1.3] tracking-[-0.015em]">1st Place, DEVMatch Hackathon</h4>
               <p className="mt-1 text-[17px] text-[var(--ink-2)]">MasChain Tourism Track</p>
@@ -367,7 +374,7 @@ export default function App() {
             </Row>
           </section>
 
-          <section id="projects" className="scroll-mt-12 py-24 md:py-32">
+          <section id="projects" className="scroll-mt-12 py-20 md:py-24">
             <SectionHead title="Projects." lede="Things I've built and shipped, from client platforms to experiments." />
             <div className="grid gap-4 md:grid-cols-2 md:gap-5">
               {projects.map((p, i) => (
@@ -403,11 +410,11 @@ export default function App() {
             </div>
           </section>
 
-          <section id="skills" className="scroll-mt-12 py-24 md:py-32">
+          <section id="skills" className="scroll-mt-12 py-20 md:py-24">
             <SkillsSection />
           </section>
 
-          <section id="contact" className="scroll-mt-12 py-24 md:py-32">
+          <section id="contact" className="scroll-mt-12 py-20 md:py-24">
             <SectionHead title="Let's talk." lede="Open to graduate and junior developer roles across frontend, backend, cloud and AI-powered systems." />
             <Reveal>
               <ResumeDownload lang={lang} onLang={setLang} />

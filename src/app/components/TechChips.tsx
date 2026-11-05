@@ -12,7 +12,8 @@ export default function TechChips({ items, className = '' }: { items: string[]; 
             className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] py-1 pl-2 pr-3 text-[14px] text-[var(--ink)]"
           >
             {logo ? (
-              <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4 shrink-0">
+              // Wordmark logos (box = their tight bounds) are wide and short: fill the height instead of a tiny square.
+              <svg viewBox={logo.box ?? '0 0 24 24'} aria-hidden className={`shrink-0 ${logo.box ? 'h-3.5 w-auto' : 'h-4 w-4'}`}>
                 <path d={logo.path} fill={logo.color} />
               </svg>
             ) : (
