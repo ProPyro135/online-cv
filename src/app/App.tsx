@@ -188,7 +188,9 @@ export default function App() {
                 aria-label={isBuilding ? 'Stop the build animation' : 'Replay the build animation'}
               >
                 {isBuilding ? <X className="h-3.5 w-3.5" /> : <MousePointer2 className="h-3.5 w-3.5" />}
-                {isBuilding ? 'Stop' : 'Replay build'}
+                {/* Keyed element, not a bare text swap: Chrome's auto-translate replaces text nodes, and React
+                    editing a replaced node crashed the whole page (blank screen) when the movie ended. */}
+                <span key={isBuilding ? 'stop' : 'replay'}>{isBuilding ? 'Stop' : 'Replay build'}</span>
               </button>
 
               <button
